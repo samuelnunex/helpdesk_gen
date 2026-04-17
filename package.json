@@ -3,9 +3,9 @@
   "version": "2.2.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3005",
+    "dev": "next dev -p 3009",
     "build": "next build",
-    "start": "next start -p 3005",
+    "start": "next start -p 3009",
     "lint": "biome lint",
     "format": "biome format --write",
     "check": "biome check",
