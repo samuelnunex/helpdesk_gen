@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1730000000000,
+      "tag": "0000_init_users",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1730100000000,
+      "tag": "0001_account_profile_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1730200000000,
+      "tag": "0002_avatar",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776373087428,
+      "tag": "0003_abnormal_microchip",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776373187428,
+      "tag": "0004_helpdesk_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776373287428,
+      "tag": "0005_chamado_numero",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776373387428,
+      "tag": "0006_chamado_leitura_comentarios",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776373487428,
+      "tag": "0007_categorias_chamados",
+      "breakpoints": true
+    }
+  ]
+}
