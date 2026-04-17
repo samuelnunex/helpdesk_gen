@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth/get-current-user";
-import { canAlterarStatus, canAtribuirChamado } from "@/lib/auth/permissions";
+import { canAlterarStatus, canAtribuirChamado, canVerProcessoCompletoChamado } from "@/lib/auth/permissions";
 
 import { DetalhesChamado } from "./_components/DetalhesChamado";
 
@@ -19,6 +19,7 @@ export default async function ChamadoPage({ params }: { params: Promise<{ id: st
       userId={user.id}
       podeAlterarStatus={canAlterarStatus(user)}
       podeAtribuir={canAtribuirChamado(user)}
+      podeVerProcessoCompleto={canVerProcessoCompletoChamado(user)}
     />
   );
 }

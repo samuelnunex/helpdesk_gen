@@ -66,3 +66,8 @@ export function canVerRelatoriosSetor(user: CurrentUser) {
 export function canGerenciarUsuarios(user: CurrentUser) {
   return user.tipoConta === "admin";
 }
+
+/** Linha do tempo / processo completo do chamado (gestão): admin, diretor ou gestor de setor. */
+export function canVerProcessoCompletoChamado(user: CurrentUser) {
+  return user.tipoConta === "admin" || user.tipoConta === "diretor" || user.tipoConta === "gestor_setor";
+}

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import Link from "next/link";
+
 import { format, formatDistance, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Clock, Paperclip, Pencil, Send, Timer, Trash2, User, X } from "lucide-react";
+import { Clock, GitBranch, Paperclip, Pencil, Send, Timer, Trash2, User, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -68,11 +70,13 @@ export function DetalhesChamado({
   userId,
   podeAlterarStatus,
   podeAtribuir,
+  podeVerProcessoCompleto,
 }: {
   chamadoId: string;
   userId: string;
   podeAlterarStatus: boolean;
   podeAtribuir: boolean;
+  podeVerProcessoCompleto: boolean;
 }) {
   const [chamado, setChamado] = useState<Chamado | null>(null);
   const [loading, setLoading] = useState(true);
@@ -325,7 +329,15 @@ export function DetalhesChamado({
                 <p className="mb-1 font-mono text-muted-foreground text-xs">#{chamado.numero}</p>
                 <CardTitle className="text-xl">{chamado.titulo}</CardTitle>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {podeVerProcessoCompleto ? (
+                  <Button variant="outline" size="sm" className="shrink-0 gap-1.5" asChild>
+                    <Link href={`/dashboard/chamados/${chamadoId}/processo`}>
+                      <GitBranch className="size-4" />
+                      Processo completo
+                    </Link>
+                  </Button>
+                ) : null}
                 <Badge variant="outline" className="font-normal text-xs">
                   {labelTipoChamado(chamado.tipoChamado)}
                 </Badge>
