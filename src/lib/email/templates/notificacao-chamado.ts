@@ -1,6 +1,8 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+import { labelTipoChamado } from "@/lib/chamados/tipo-chamado";
+
 export type TipoNotificacaoChamado = "atribuicao" | "comentario" | "status_alterado" | "acompanhamento" | "mencao";
 
 export type ChamadoResumoEmail = {
@@ -9,6 +11,7 @@ export type ChamadoResumoEmail = {
   titulo: string;
   status: string;
   prioridade: string;
+  tipoChamado: string | null;
   criadoEm: Date;
   setorNome: string | null;
   categoriaNome: string | null;
@@ -101,6 +104,7 @@ export function buildNotificacaoChamadoEmail(params: {
         `Assunto: ${chamado.titulo}`,
         `Status: ${labelStatus(chamado.status)}`,
         `Prioridade: ${labelPrioridade(chamado.prioridade)}`,
+        chamado.tipoChamado ? `Tipo: ${labelTipoChamado(chamado.tipoChamado)}` : "",
         chamado.setorNome ? `Setor: ${chamado.setorNome}` : "",
         chamado.categoriaNome ? `Categoria: ${chamado.categoriaNome}` : "",
         `Aberto em: ${formatarDataPt(chamado.criadoEm)}`,
@@ -147,6 +151,7 @@ export function buildNotificacaoChamadoEmail(params: {
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="font-size:13px;color:#3f3f46;">
         <tr><td style="padding:4px 0;width:38%;color:#71717a;">Status</td><td style="padding:4px 0;"><strong>${escapeHtml(labelStatus(chamado.status))}</strong></td></tr>
         <tr><td style="padding:4px 0;color:#71717a;">Prioridade</td><td style="padding:4px 0;"><strong>${escapeHtml(labelPrioridade(chamado.prioridade))}</strong></td></tr>
+        ${chamado.tipoChamado ? `<tr><td style="padding:4px 0;color:#71717a;">Tipo</td><td style="padding:4px 0;">${escapeHtml(labelTipoChamado(chamado.tipoChamado))}</td></tr>` : ""}
         ${chamado.setorNome ? `<tr><td style="padding:4px 0;color:#71717a;">Setor</td><td style="padding:4px 0;">${escapeHtml(chamado.setorNome)}</td></tr>` : ""}
         ${chamado.categoriaNome ? `<tr><td style="padding:4px 0;color:#71717a;">Categoria</td><td style="padding:4px 0;">${escapeHtml(chamado.categoriaNome)}</td></tr>` : ""}
         <tr><td style="padding:4px 0;color:#71717a;">Aberto em</td><td style="padding:4px 0;">${escapeHtml(formatarDataPt(chamado.criadoEm))}</td></tr>

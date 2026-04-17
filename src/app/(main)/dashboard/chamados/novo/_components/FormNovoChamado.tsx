@@ -20,6 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ComentarioTiptapEditor } from "@/components/comentario-editor/comentario-tiptap-editor";
 import { plainTextLengthComentario, sanitizeComentarioHtml } from "@/lib/html/sanitize-comentario-html";
+import { TIPO_CHAMADO_PG } from "@/lib/chamados/tipo-chamado";
 
 const formSchema = z.object({
   titulo: z.string().min(1, "Título obrigatório.").max(300),
@@ -28,6 +29,7 @@ const formSchema = z.object({
     .min(1, "Descrição obrigatória.")
     .refine((v) => plainTextLengthComentario(sanitizeComentarioHtml(v)) >= 1, "Descrição obrigatória."),
   prioridade: z.enum(["baixa", "media", "alta", "urgente"]),
+  tipoChamado: z.enum(TIPO_CHAMADO_PG),
   setorId: z.string().uuid("Selecione um setor."),
   categoriaId: z.string().uuid("Selecione uma categoria."),
 });
@@ -68,7 +70,14 @@ export function FormNovoChamado({ userId, defaultSetorId }: { userId: string; de
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { titulo: "", descricao: "", prioridade: "media", setorId: defaultSetorId, categoriaId: "" },
+    defaultValues: {
+      titulo: "",
+      descricao: "",
+      prioridade: "media",
+      tipoChamado: "requisicao",
+      setorId: defaultSetorId,
+      categoriaId: "",
+    },
   });
 
   // Se o usuário mudar (ou vier vazio), garante o default no campo.
@@ -223,38 +232,67 @@ export function FormNovoChamado({ userId, defaultSetorId }: { userId: string; de
               </div>
             </div>
 
-            <FormField
-              control={form.control}
-              name="categoriaId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoria</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a categoria do chamado" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categoriasComResponsavel.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-muted-foreground text-xs">
-                    O responsável inicial será escolhido dentre os técnicos responsáveis desta categoria.
-                  </p>
-                  {categoriasComResponsavel.length === 0 && (
-                    <p className="text-amber-700 text-xs dark:text-amber-500">
-                      Nenhuma categoria disponível. Peça a um administrador para cadastrar categorias em Configurações.
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="tipoChamado"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo do chamado</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="requisicao">Requisição</SelectItem>
+                        <SelectItem value="incidente">Incidente</SelectItem>
+                        <SelectItem value="mudanca">Mudança</SelectItem>
+                        <SelectItem value="solicitacao_informacao">Solicitação de informação</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-muted-foreground text-xs">
+                      Classifique conforme a natureza do pedido (ex.: falha = incidente, novo acesso = requisição).
                     </p>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="categoriaId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoria</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a categoria do chamado" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categoriasComResponsavel.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-muted-foreground text-xs">
+                      O responsável inicial será escolhido dentre os técnicos responsáveis desta categoria.
+                    </p>
+                    {categoriasComResponsavel.length === 0 && (
+                      <p className="text-amber-700 text-xs dark:text-amber-500">
+                        Nenhuma categoria disponível. Peça a um administrador para cadastrar categorias em Configurações.
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
@@ -263,7 +301,7 @@ export function FormNovoChamado({ userId, defaultSetorId }: { userId: string; de
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Prioridade</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a prioridade" />
@@ -287,7 +325,7 @@ export function FormNovoChamado({ userId, defaultSetorId }: { userId: string; de
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Setor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o setor" />

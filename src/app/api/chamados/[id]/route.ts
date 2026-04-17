@@ -23,10 +23,12 @@ import { destinatariosNotificacaoChamado } from "@/lib/notificacoes-chamado-dest
 import { calcularLimitesSla } from "@/lib/sla/calcular-prazos";
 import { adicionarMinutosUteis } from "@/lib/sla/horario-comercial";
 import { buscarPoliticaSla, type PrioridadeChamado } from "@/lib/sla/politica-db";
+import { TIPO_CHAMADO_PG } from "@/lib/chamados/tipo-chamado";
 
 const PatchChamadoSchema = z.object({
   status: z.enum(["aberto", "em_progresso", "fechado", "cancelado"]).optional(),
   prioridade: z.enum(["baixa", "media", "alta", "urgente"]).optional(),
+  tipoChamado: z.enum(TIPO_CHAMADO_PG).optional(),
   atribuidoA: z.string().uuid().optional(),
   categoriaId: z.string().uuid().optional(),
   titulo: z.string().min(1).max(300).optional(),
@@ -129,6 +131,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (parsed.data.categoriaId !== undefined && !canAtribuirChamado(user)) {
     return NextResponse.json({ error: "Sem permissão para alterar a categoria." }, { status: 403 });
   }
+  if (parsed.data.tipoChamado !== undefined && !canAtribuirChamado(user)) {
+    return NextResponse.json({ error: "Sem permissão para alterar o tipo do chamado." }, { status: 403 });
+  }
 
   if (parsed.data.categoriaId !== undefined) {
     const [cat] = await db
@@ -165,6 +170,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   }
   if (parsed.data.prioridade !== undefined) updates.prioridade = parsed.data.prioridade;
+  if (parsed.data.tipoChamado !== undefined) updates.tipoChamado = parsed.data.tipoChamado;
   if (parsed.data.atribuidoA !== undefined) updates.atribuidoA = parsed.data.atribuidoA;
   if (parsed.data.categoriaId !== undefined) {
     updates.categoriaId = parsed.data.categoriaId;
@@ -235,7 +241,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const [updated] = await db.update(chamados).set(updates).where(eq(chamados.id, id)).returning();
 
-  if (parsed.data.categoriaId !== undefined || parsed.data.atribuidoA !== undefined) {
+  if (
+    parsed.data.categoriaId !== undefined ||
+    parsed.data.atribuidoA !== undefined ||
+    parsed.data.tipoChamado !== undefined
+  ) {
     await touchChamadoAtualizado(id);
   }
 

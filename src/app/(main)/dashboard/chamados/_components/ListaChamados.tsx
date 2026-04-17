@@ -245,9 +245,9 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
   const isClosed = (c: Chamado) => c.status === "fechado" || c.status === "cancelado";
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex min-w-[200px] max-w-sm flex-1 flex-col gap-1.5">
+    <div className="flex min-w-0 w-full max-w-full flex-col gap-4">
+      <div className="flex min-w-0 flex-wrap items-end gap-3">
+        <div className="flex min-w-0 max-w-full flex-1 basis-[min(100%,20rem)] flex-col gap-1.5 sm:min-w-[200px] sm:max-w-sm">
           <label htmlFor="busca-chamado" className="text-muted-foreground text-xs font-medium">
             Buscar por nº ou assunto
           </label>
@@ -315,7 +315,7 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
         </Select>
 
         <Select value={filtroSetor} onValueChange={setFiltroSetor}>
-          <SelectTrigger className="w-[min(100%,14rem)] min-w-[11rem]">
+          <SelectTrigger className="w-full max-w-[14rem] shrink-0 sm:w-[min(100%,14rem)]">
             <SelectValue placeholder="Setor" />
           </SelectTrigger>
           <SelectContent>
@@ -343,14 +343,14 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
+        <div className="min-w-0 w-full max-w-full overflow-x-auto rounded-lg border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50 text-muted-foreground text-xs uppercase tracking-wide">
                 <th className="w-12 px-3 py-2 text-left font-medium" title="Número do chamado">
                   Nº
                 </th>
-                <th className="px-3 py-2 text-left font-medium">Chamado</th>
+                <th className="min-w-0 px-3 py-2 text-left font-medium">Chamado</th>
                 <th className="px-3 py-2 text-left font-medium hidden md:table-cell w-[140px]">Envolvidos</th>
                 <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Setor</th>
                 <th className="px-3 py-2 text-left font-medium hidden md:table-cell">Categoria</th>
@@ -392,13 +392,13 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
                         #{chamado.numero}
                       </span>
                     </td>
-                    <td className="px-3 py-2 max-w-[200px]">
-                      <span className="font-medium line-clamp-1 block" title={chamado.titulo}>
+                    <td className="min-w-0 max-w-[min(100vw,20rem)] px-3 py-2 sm:max-w-xs md:max-w-[14rem] lg:max-w-md">
+                      <span className="block truncate font-medium" title={chamado.titulo}>
                         {chamado.titulo}
                       </span>
                       {requerente ? (
                         <span
-                          className="text-muted-foreground mt-0.5 block text-xs line-clamp-1"
+                          className="mt-0.5 block truncate text-muted-foreground text-xs"
                           title={`Requerente: ${requerente}`}
                         >
                           Requerente: {requerente}
@@ -408,18 +408,24 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
                     <td className="px-3 py-2 hidden md:table-cell">
                       <AvataresEnvolvidos pessoas={chamado.envolvidos ?? []} />
                     </td>
-                    <td className="px-3 py-2 hidden sm:table-cell">
+                    <td className="max-w-[7rem] overflow-hidden px-3 py-2 hidden sm:table-cell">
                       {chamado.setorNome ? (
-                        <Badge variant="outline" className="text-xs whitespace-nowrap">
+                        <Badge
+                          variant="outline"
+                          className="max-w-full min-w-0 shrink justify-start truncate text-xs font-normal"
+                        >
                           {chamado.setorNome}
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 hidden md:table-cell">
+                    <td className="max-w-[7rem] overflow-hidden px-3 py-2 hidden md:table-cell">
                       {chamado.categoriaNome ? (
-                        <Badge variant="secondary" className="text-xs whitespace-nowrap font-normal">
+                        <Badge
+                          variant="secondary"
+                          className="max-w-full min-w-0 shrink justify-start truncate text-xs font-normal"
+                        >
                           {chamado.categoriaNome}
                         </Badge>
                       ) : (
@@ -433,7 +439,7 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
                       <SlaStatusBadge chamado={chamado} />
                     </td>
                     <td
-                      className="px-3 py-2"
+                      className="min-w-0 max-w-[9.5rem] px-3 py-2"
                       onClick={podeAlterarStatus ? (e) => e.stopPropagation() : undefined}
                       onKeyDown={podeAlterarStatus ? (e) => e.stopPropagation() : undefined}
                     >
@@ -443,7 +449,7 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
                           onValueChange={(v) => alterarStatus(chamado.id, v)}
                           disabled={updatingId === chamado.id}
                         >
-                          <SelectTrigger className="h-7 text-xs w-36 px-2">
+                          <SelectTrigger className="h-7 w-full min-w-0 max-w-full text-xs px-2">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -485,13 +491,13 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-xs hidden xl:table-cell">
+                    <td className="min-w-0 max-w-[10rem] px-3 py-2 text-xs hidden xl:table-cell">
                       {tecnico ? (
-                        <span className="text-foreground line-clamp-2" title={tecnico}>
+                        <span className="line-clamp-2 text-foreground break-words" title={tecnico}>
                           {tecnico}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground whitespace-nowrap">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-3 py-2 text-center">

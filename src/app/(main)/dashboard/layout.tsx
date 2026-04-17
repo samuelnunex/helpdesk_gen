@@ -68,7 +68,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             </div>
           </div>
         </header>
-        <div className="min-h-0 flex-1 p-4 md:p-6">
+        <div className="min-h-0 min-w-0 flex-1 p-4 md:p-6">
           <ChamadosRealtimeProvider>{children}</ChamadosRealtimeProvider>
         </div>
       </SidebarInset>

@@ -4,6 +4,7 @@ import { and, desc, eq, gt, inArray, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { TIPO_CHAMADO_PG } from "@/lib/chamados/tipo-chamado";
 import { andComFiltrosLista, scopeListaChamadosParaUsuario } from "@/lib/chamados/scope-lista-para-usuario";
 import { db } from "@/lib/db";
 import {
@@ -25,6 +26,7 @@ const CreateChamadoSchema = z.object({
   titulo: z.string().min(1).max(300),
   descricao: z.string().min(1),
   prioridade: z.enum(["baixa", "media", "alta", "urgente"]).default("media"),
+  tipoChamado: z.enum(TIPO_CHAMADO_PG),
   setorId: z.string().uuid(),
   categoriaId: z.string().uuid(),
   acompanhadores: z.array(z.string().uuid()).optional(),
@@ -77,6 +79,7 @@ export async function GET(request: Request) {
         titulo: chamados.titulo,
         status: chamados.status,
         prioridade: chamados.prioridade,
+        tipoChamado: chamados.tipoChamado,
         setorId: chamados.setorId,
         setorNome: setores.nome,
         categoriaId: chamados.categoriaId,
@@ -265,6 +268,7 @@ export async function POST(request: Request) {
         titulo: parsed.data.titulo,
         descricao: parsed.data.descricao,
         prioridade: parsed.data.prioridade,
+        tipoChamado: parsed.data.tipoChamado,
         setorId: parsed.data.setorId,
         categoriaId: parsed.data.categoriaId,
         criadorId: user.id,

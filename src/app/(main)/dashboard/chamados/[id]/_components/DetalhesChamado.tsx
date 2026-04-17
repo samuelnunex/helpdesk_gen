@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ComentarioTiptapEditor } from "@/components/comentario-editor/comentario-tiptap-editor";
 import { UsuarioBuscaCombobox } from "@/components/usuario-busca-combobox";
 import { plainTextLengthComentario, sanitizeComentarioHtml } from "@/lib/html/sanitize-comentario-html";
+import { labelTipoChamado, TIPO_CHAMADO_PG } from "@/lib/chamados/tipo-chamado";
 import { SLA_TIMEZONE, minutosUteisEntre } from "@/lib/sla/horario-comercial";
 import { slaResumoVisual } from "@/lib/sla/status-ui";
 import { useChamadosRealtimeStore } from "@/stores/chamados-realtime";
@@ -33,6 +34,7 @@ type Chamado = {
   descricao: string;
   status: string;
   prioridade: string;
+  tipoChamado: string;
   criadoEm: string;
   atualizadoEm: string;
   fechadoEm: string | null;
@@ -206,6 +208,21 @@ export function DetalhesChamado({
     fetchChamado();
   }
 
+  async function alterarTipoChamado(tipoChamado: (typeof TIPO_CHAMADO_PG)[number]) {
+    const res = await fetch(`/api/chamados/${chamadoId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tipoChamado }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(data.error ?? "Erro ao alterar o tipo do chamado.");
+      return;
+    }
+    toast.success("Tipo do chamado atualizado.");
+    fetchChamado();
+  }
+
   async function adicionarAcompanhador() {
     if (!selectAdicionarAcomp) return;
     setAcompanhadorActionLoading(true);
@@ -308,7 +325,10 @@ export function DetalhesChamado({
                 <p className="mb-1 font-mono text-muted-foreground text-xs">#{chamado.numero}</p>
                 <CardTitle className="text-xl">{chamado.titulo}</CardTitle>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="font-normal text-xs">
+                  {labelTipoChamado(chamado.tipoChamado)}
+                </Badge>
                 <PrioridadeBadge prioridade={chamado.prioridade} />
                 <StatusBadge status={chamado.status} />
               </div>
@@ -569,6 +589,27 @@ export function DetalhesChamado({
               ) : (
                 <Badge variant="secondary" className="font-normal">
                   {chamado.categoria?.nome ?? "—"}
+                </Badge>
+              )}
+            </div>
+
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-xs uppercase tracking-wider">Tipo</p>
+              {podeAtribuir ? (
+                <Select value={chamado.tipoChamado} onValueChange={(v) => void alterarTipoChamado(v as (typeof TIPO_CHAMADO_PG)[number])}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="requisicao">Requisição</SelectItem>
+                    <SelectItem value="incidente">Incidente</SelectItem>
+                    <SelectItem value="mudanca">Mudança</SelectItem>
+                    <SelectItem value="solicitacao_informacao">Solicitação de informação</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge variant="outline" className="font-normal">
+                  {labelTipoChamado(chamado.tipoChamado)}
                 </Badge>
               )}
             </div>

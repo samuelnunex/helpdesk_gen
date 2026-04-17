@@ -1,5 +1,7 @@
 import { boolean, integer, pgEnum, pgTable, primaryKey, serial, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
+import { TIPO_CHAMADO_PG } from "@/lib/chamados/tipo-chamado";
+
 export const tipoContaEnum = pgEnum("tipo_conta", [
   "admin",
   "usuario_final",
@@ -11,6 +13,7 @@ export const tipoContaEnum = pgEnum("tipo_conta", [
 export const statusContaEnum = pgEnum("status_conta", ["ativo", "inativo", "verificado", "pendente"]);
 export const statusChamadoEnum = pgEnum("status_chamado", ["aberto", "em_progresso", "fechado", "cancelado"]);
 export const prioridadeChamadoEnum = pgEnum("prioridade_chamado", ["baixa", "media", "alta", "urgente"]);
+export const tipoChamadoEnum = pgEnum("tipo_chamado", TIPO_CHAMADO_PG);
 export const tipoNotificacaoEnum = pgEnum("tipo_notificacao", [
   "atribuicao",
   "comentario",
@@ -118,6 +121,7 @@ export const chamados = pgTable("chamados", {
   descricao: text("descricao").notNull(),
   status: statusChamadoEnum("status").default("aberto").notNull(),
   prioridade: prioridadeChamadoEnum("prioridade").default("media").notNull(),
+  tipoChamado: tipoChamadoEnum("tipo_chamado").default("requisicao").notNull(),
   setorId: uuid("setor_id")
     .notNull()
     .references(() => setores.id, { onDelete: "restrict" }),

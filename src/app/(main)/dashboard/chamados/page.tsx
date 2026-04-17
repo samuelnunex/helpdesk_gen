@@ -15,9 +15,9 @@ export default async function ChamadosPage() {
   if (!user) redirect("/auth/login");
 
   return (
-    <div className="@container/main flex flex-col gap-4 md:gap-6">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="@container/main flex min-w-0 max-w-full flex-col gap-4 md:gap-6">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">Chamados</h1>
           <p className="text-muted-foreground text-sm">
             Gerencie e acompanhe todos os chamados.

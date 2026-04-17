@@ -13,6 +13,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
 import { hashPassword } from "../lib/auth/password";
+import { TIPO_CHAMADO_PG } from "../lib/chamados/tipo-chamado";
 import * as schema from "../lib/db/schema";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -279,6 +280,7 @@ async function main(): Promise<void> {
         descricao: `${base.trecho}\n\nTicket fictício para ambiente de demonstração (seed). Categoria e setor variados para testes de lista e filtros.`,
         status,
         prioridade,
+        tipoChamado: TIPO_CHAMADO_PG[i % TIPO_CHAMADO_PG.length],
         setorId,
         categoriaId,
         criadorId,

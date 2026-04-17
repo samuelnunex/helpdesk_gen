@@ -1,12 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LayoutGrid, LogIn, PanelLeft, Tags, Timer, Users } from "lucide-react";
+import { Palette, Ticket, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AppSettingsValues, ThemeDefaultValue } from "@/lib/settings/types";
 import { LOGO_SIZE_OPTIONS } from "@/lib/settings/logo-size";
@@ -105,265 +107,289 @@ export function SettingsForm({ defaultValues }: { defaultValues: AppSettingsValu
   };
 
   return (
-    <Form {...form}>
-      <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="mb-4 h-9 w-full justify-start gap-0 rounded-lg border bg-transparent p-0">
-            <TabsTrigger value="geral" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
-              <LayoutGrid className="size-4" />
-              Geral
-            </TabsTrigger>
-            <TabsTrigger value="login" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
-              <LogIn className="size-4" />
-              Login
-            </TabsTrigger>
-            <TabsTrigger value="sidebar" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
-              <PanelLeft className="size-4" />
-              Sidebar
-            </TabsTrigger>
-            <TabsTrigger value="categorias" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
-              <Tags className="size-4" />
-              Categorias
-            </TabsTrigger>
-            <TabsTrigger value="sla" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
-              <Timer className="size-4" />
-              SLA
-            </TabsTrigger>
-            <TabsTrigger value="usuarios" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
-              <Users className="size-4" />
-              Usuários
-            </TabsTrigger>
-        </TabsList>
+    <Tabs defaultValue="marca" className="w-full">
+      <TabsList className="mb-4 h-9 w-full justify-start gap-0 rounded-lg border bg-transparent p-0">
+        <TabsTrigger value="marca" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
+          <Palette className="size-4" />
+          Marca e aparência
+        </TabsTrigger>
+        <TabsTrigger value="chamados" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
+          <Ticket className="size-4" />
+          Chamados
+        </TabsTrigger>
+        <TabsTrigger value="usuarios" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
+          <Users className="size-4" />
+          Usuários
+        </TabsTrigger>
+      </TabsList>
 
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <TabsContent value="geral" className="mt-0 space-y-4">
-            <FormField
-              control={form.control}
-              name="app_name"
-              render={({ field }) => (
-                <FormItem className="max-w-xs">
-                  <FormLabel>Nome do app</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Studio Admin" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex flex-wrap gap-6">
-              <FormField
-                control={form.control}
-                name="theme_default"
-                render={({ field }) => (
-                  <FormItem className="w-40">
-                    <FormLabel>Tema padrão</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+      <TabsContent value="marca" className="mt-0">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Identidade</CardTitle>
+                <CardDescription>Nome exibido, tema padrão e tamanho das logomarcas.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="app_name"
+                  render={({ field }) => (
+                    <FormItem className="max-w-xs">
+                      <FormLabel>Nome do app</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
+                        <Input placeholder="Studio Admin" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {THEME_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="logo_size"
-                render={({ field }) => (
-                  <FormItem className="w-40">
-                    <FormLabel>Tamanho das logos</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {LOGO_SIZE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </TabsContent>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex flex-wrap gap-6">
+                  <FormField
+                    control={form.control}
+                    name="theme_default"
+                    render={({ field }) => (
+                      <FormItem className="w-40">
+                        <FormLabel>Tema padrão</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {THEME_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="logo_size"
+                    render={({ field }) => (
+                      <FormItem className="w-40">
+                        <FormLabel>Tamanho das logos</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {LOGO_SIZE_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-          <TabsContent value="login" className="mt-0 space-y-6">
-            <FormField
-              control={form.control}
-              name="auth_hero_image"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <ImageUploadField
-                      label="Foto de fundo"
-                      hint="Lado do formulário de login."
-                      value={field.value}
-                      onChange={field.onChange}
-                      kind="auth_hero"
-                      aspectRatio="wide"
+            <Card>
+              <CardHeader>
+                <CardTitle>Tela de login</CardTitle>
+                <CardDescription>Fundo e logos da página de autenticação.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="auth_hero_image"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ImageUploadField
+                          label="Foto de fundo"
+                          hint="Lado do formulário de login."
+                          value={field.value}
+                          onChange={field.onChange}
+                          kind="auth_hero"
+                          aspectRatio="wide"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="logo_auth_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <ImageUploadField
+                            label="Logo (claro)"
+                            value={field.value}
+                            onChange={field.onChange}
+                            kind="logo_auth"
+                            compact
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="logo_auth_url_dark"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <ImageUploadField
+                            label="Logo (escuro)"
+                            value={field.value}
+                            onChange={field.onChange}
+                            kind="logo_auth_dark"
+                            compact
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Sidebar</CardTitle>
+                <CardDescription>Logos com a barra lateral aberta ou recolhida (modo ícone).</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <p className="mb-3 text-muted-foreground text-sm">Quando a sidebar está aberta</p>
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="logo_sidebar_url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <ImageUploadField
+                              label="Logo (claro)"
+                              value={field.value}
+                              onChange={field.onChange}
+                              kind="logo_sidebar"
+                              compact
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid gap-6 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="logo_auth_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <ImageUploadField
-                        label="Logo (claro)"
-                        value={field.value}
-                        onChange={field.onChange}
-                        kind="logo_auth"
-                        compact
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="logo_auth_url_dark"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <ImageUploadField
-                        label="Logo (escuro)"
-                        value={field.value}
-                        onChange={field.onChange}
-                        kind="logo_auth_dark"
-                        compact
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </TabsContent>
+                    <FormField
+                      control={form.control}
+                      name="logo_sidebar_url_dark"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <ImageUploadField
+                              label="Logo (escuro)"
+                              value={field.value}
+                              onChange={field.onChange}
+                              kind="logo_sidebar_dark"
+                              compact
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-3 text-muted-foreground text-sm">Quando a sidebar está fechada (só ícone)</p>
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="logo_sidebar_icon_url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <ImageUploadField
+                              label="Ícone (claro)"
+                              hint="Se vazio, usa a logo acima."
+                              value={field.value}
+                              onChange={field.onChange}
+                              kind="logo_sidebar_icon"
+                              compact
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="logo_sidebar_icon_url_dark"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <ImageUploadField
+                              label="Ícone (escuro)"
+                              value={field.value}
+                              onChange={field.onChange}
+                              kind="logo_sidebar_icon_dark"
+                              compact
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          <TabsContent value="sidebar" className="mt-0 space-y-6">
-            <div>
-              <p className="mb-3 text-muted-foreground text-sm">Quando a sidebar está aberta</p>
-              <div className="grid gap-6 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="logo_sidebar_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <ImageUploadField
-                          label="Logo (claro)"
-                          value={field.value}
-                          onChange={field.onChange}
-                          kind="logo_sidebar"
-                          compact
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="logo_sidebar_url_dark"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <ImageUploadField
-                          label="Logo (escuro)"
-                          value={field.value}
-                          onChange={field.onChange}
-                          kind="logo_sidebar_dark"
-                          compact
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <div className="border-t pt-4">
+              <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Salvando…" : "Salvar"}
+              </Button>
             </div>
-            <div>
-              <p className="mb-3 text-muted-foreground text-sm">Quando a sidebar está fechada (só ícone)</p>
-              <div className="grid gap-6 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="logo_sidebar_icon_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <ImageUploadField
-                          label="Ícone (claro)"
-                          hint="Se vazio, usa a logo acima."
-                          value={field.value}
-                          onChange={field.onChange}
-                          kind="logo_sidebar_icon"
-                          compact
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="logo_sidebar_icon_url_dark"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <ImageUploadField
-                          label="Ícone (escuro)"
-                          value={field.value}
-                          onChange={field.onChange}
-                          kind="logo_sidebar_icon_dark"
-                          compact
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-          </TabsContent>
+          </form>
+        </Form>
+      </TabsContent>
 
-          <div className="mt-6 border-t pt-4">
-            <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Salvando…" : "Salvar"}
-            </Button>
+      <TabsContent value="chamados" className="mt-0 space-y-10">
+        <section className="space-y-3">
+          <div>
+            <h2 className="font-semibold text-lg tracking-tight">Categorias</h2>
+            <p className="text-muted-foreground text-sm">
+              Tipos de chamado, responsáveis e disponibilidade no formulário.
+            </p>
           </div>
-        </form>
-
-        <TabsContent value="categorias" className="mt-0">
           <CategoriasSettings />
-        </TabsContent>
-        <TabsContent value="sla" className="mt-0">
+        </section>
+        <Separator />
+        <section className="space-y-3">
+          <div>
+            <h2 className="font-semibold text-lg tracking-tight">SLA por prioridade</h2>
+            <p className="text-muted-foreground text-sm">
+              Metas de resposta e resolução por categoria e prioridade.
+            </p>
+          </div>
           <SlaSettings />
-        </TabsContent>
-        <TabsContent value="usuarios" className="mt-0">
-          <UsersManagement />
-        </TabsContent>
-      </Tabs>
-    </Form>
+        </section>
+      </TabsContent>
+
+      <TabsContent value="usuarios" className="mt-0">
+        <UsersManagement />
+      </TabsContent>
+    </Tabs>
   );
 }

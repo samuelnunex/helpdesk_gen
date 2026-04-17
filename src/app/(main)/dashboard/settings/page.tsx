@@ -7,7 +7,8 @@ import { SettingsForm } from "./_components/settings-form";
 
 export const metadata = {
   title: "Configurações",
-  description: "Aparência e branding do painel (foto de login, tema padrão, logomarcas).",
+  description:
+    "Marca e aparência do painel, categorias e SLA de chamados, e gestão de usuários (admin).",
 };
 
 export default async function SettingsPage() {
@@ -25,7 +26,9 @@ export default async function SettingsPage() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="font-semibold text-2xl tracking-tight">Configurações</h1>
-        <p className="text-muted-foreground text-sm">Aparência e identidade do painel.</p>
+        <p className="text-muted-foreground text-sm">
+          Marca do painel, regras de chamados e contas de usuário.
+        </p>
       </div>
       <SettingsForm defaultValues={settings} />
     </div>
