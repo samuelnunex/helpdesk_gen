@@ -49,7 +49,7 @@ async function prepareImagesForHtml2Canvas(root: HTMLElement): Promise<() => voi
       const dataUrl = await blobToDataUrl(await res.blob());
       img.removeAttribute("crossorigin");
       img.src = dataUrl;
-      await img.decode().catch(() => {});
+      await img.decode().catch(() => undefined);
       rollbacks.push(() => {
         img.src = prevSrc;
         if (prevCrossOrigin) img.crossOrigin = prevCrossOrigin;
