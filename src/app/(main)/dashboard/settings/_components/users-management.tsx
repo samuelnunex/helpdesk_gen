@@ -137,6 +137,7 @@ const createUserSchema = z.object({
 
 const editUserSchema = z.object({
   name: z.string().max(200).optional(),
+  setorId: z.string().uuid("Selecione um setor."),
   tipoConta: z.enum(["admin", "usuario_final", "gestor_setor", "diretor", "ti", "desenvolvedor"]),
   status: z.enum(["ativo", "inativo", "verificado", "pendente"]),
   password: z.string().min(6).optional().or(z.literal("")),
@@ -230,7 +231,7 @@ export function UsersManagement() {
 
   const editForm = useForm<EditUserValues>({
     resolver: zodResolver(editUserSchema),
-    defaultValues: { name: "", tipoConta: "usuario_final", status: "ativo", password: "" },
+    defaultValues: { name: "", setorId: "", tipoConta: "usuario_final", status: "ativo", password: "" },
   });
 
   const onAddOpen = (open: boolean) => {
@@ -268,6 +269,7 @@ export function UsersManagement() {
         : "usuario_final";
       editForm.reset({
         name: user.name ?? "",
+        setorId: user.setorId ?? "",
         tipoConta,
         status: user.status as "ativo" | "inativo" | "verificado" | "pendente",
         password: "",
@@ -283,6 +285,7 @@ export function UsersManagement() {
     try {
       const body: Record<string, unknown> = {
         name: data.name || null,
+        setorId: data.setorId,
         tipoConta: data.tipoConta,
         status: data.status,
         categoriasIds: [...editCategoriasIds],
@@ -716,31 +719,31 @@ export function UsersManagement() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={createForm.control}
-                name="setorId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Setor</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o setor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {setores.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <FormField
+                  control={createForm.control}
+                  name="setorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Setor</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o setor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {setores.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={createForm.control}
                   name="tipoConta"
@@ -839,7 +842,31 @@ export function UsersManagement() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <FormField
+                    control={editForm.control}
+                    name="setorId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Setor</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o setor" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {setores.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={editForm.control}
                     name="tipoConta"

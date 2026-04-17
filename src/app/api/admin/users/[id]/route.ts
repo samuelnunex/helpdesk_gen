@@ -6,7 +6,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/require-user";
 import { hashPassword } from "@/lib/auth/password";
 import { db } from "@/lib/db";
-import { categorias, usuarioCategorias, users } from "@/lib/db/schema";
+import { categorias, setores, usuarioCategorias, users } from "@/lib/db/schema";
 
 async function requireAdmin() {
   const auth = await requireUser();
@@ -24,6 +24,7 @@ async function requireAdmin() {
 
 const PatchBodySchema = z.object({
   name: z.string().max(200).optional().nullable(),
+  setorId: z.string().uuid().optional(),
   tipoConta: z
     .enum(["admin", "usuario_final", "gestor_setor", "diretor", "ti", "desenvolvedor"])
     .optional(),
@@ -66,8 +67,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     }
 
+    if (parsed.data.setorId !== undefined) {
+      const [setor] = await db.select({ id: setores.id }).from(setores).where(eq(setores.id, parsed.data.setorId)).limit(1);
+      if (!setor) {
+        return NextResponse.json({ error: "Setor inválido." }, { status: 400 });
+      }
+    }
+
     const updates: Partial<{
       name: string | null;
+      setorId: string;
       tipoConta: "admin" | "usuario_final" | "gestor_setor" | "diretor" | "ti" | "desenvolvedor";
       status: "ativo" | "inativo" | "verificado" | "pendente";
       passwordHash: string;
@@ -75,6 +84,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }> = { updatedAt: new Date() };
 
     if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.setorId !== undefined) updates.setorId = parsed.data.setorId;
     if (parsed.data.tipoConta !== undefined) updates.tipoConta = parsed.data.tipoConta;
     if (parsed.data.status !== undefined) updates.status = parsed.data.status;
     if (parsed.data.password !== undefined) {
