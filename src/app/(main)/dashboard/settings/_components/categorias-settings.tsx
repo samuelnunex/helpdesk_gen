@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UsuarioBuscaCombobox } from "@/components/usuario-busca-combobox";
+import { UsuariosMultiCombobox } from "@/components/usuarios-multi-combobox";
 import {
   Table,
   TableBody,
@@ -26,7 +26,8 @@ type CategoriaAdmin = {
   nome: string;
   ativo: boolean;
   responsavelPadraoId: string | null;
-  responsavelNome: string | null;
+  responsaveisIds?: string[];
+  responsaveis?: { id: string; name: string | null; email: string }[];
 };
 
 type UsuarioResumo = { id: string; name: string | null; email: string };
@@ -37,12 +38,12 @@ export function CategoriasSettings() {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [novoNome, setNovoNome] = useState("");
-  const [novoResp, setNovoResp] = useState("");
+  const [novoRespIds, setNovoRespIds] = useState<string[]>([]);
   const [savingCreate, setSavingCreate] = useState(false);
 
   const [editRow, setEditRow] = useState<CategoriaAdmin | null>(null);
   const [editNome, setEditNome] = useState("");
-  const [editResp, setEditResp] = useState("");
+  const [editRespIds, setEditRespIds] = useState<string[]>([]);
   const [editAtivo, setEditAtivo] = useState(true);
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -70,8 +71,8 @@ export function CategoriasSettings() {
 
   async function criar() {
     const nome = novoNome.trim();
-    if (!nome || !novoResp) {
-      toast.error("Preencha o nome e o responsável padrão.");
+    if (!nome || novoRespIds.length === 0) {
+      toast.error("Preencha o nome e selecione ao menos um responsável.");
       return;
     }
     setSavingCreate(true);
@@ -79,7 +80,7 @@ export function CategoriasSettings() {
       const res = await fetch("/api/admin/categorias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, responsavelPadraoId: novoResp }),
+        body: JSON.stringify({ nome, responsaveisIds: novoRespIds }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -89,7 +90,7 @@ export function CategoriasSettings() {
       toast.success("Categoria criada.");
       setCreateOpen(false);
       setNovoNome("");
-      setNovoResp("");
+      setNovoRespIds([]);
       await load();
     } finally {
       setSavingCreate(false);
@@ -99,15 +100,15 @@ export function CategoriasSettings() {
   function abrirEditar(c: CategoriaAdmin) {
     setEditRow(c);
     setEditNome(c.nome);
-    setEditResp(c.responsavelPadraoId ?? "");
+    setEditRespIds(c.responsaveisIds ?? (c.responsavelPadraoId ? [c.responsavelPadraoId] : []));
     setEditAtivo(c.ativo);
   }
 
   async function salvarEdicao() {
     if (!editRow) return;
     const nome = editNome.trim();
-    if (!nome || !editResp) {
-      toast.error("Preencha o nome e o responsável padrão.");
+    if (!nome || editRespIds.length === 0) {
+      toast.error("Preencha o nome e selecione ao menos um responsável.");
       return;
     }
     setSavingEdit(true);
@@ -115,7 +116,7 @@ export function CategoriasSettings() {
       const res = await fetch(`/api/admin/categorias/${editRow.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, responsavelPadraoId: editResp, ativo: editAtivo }),
+        body: JSON.stringify({ nome, responsaveisIds: editRespIds, ativo: editAtivo }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -140,7 +141,7 @@ export function CategoriasSettings() {
         <div>
           <h2 className="font-semibold text-lg tracking-tight">Categorias de chamado</h2>
           <p className="text-muted-foreground text-sm">
-            Cada categoria define um técnico responsável padrão ao abrir ou reclassificar chamados.
+            Cada categoria define um ou mais técnicos responsáveis ao abrir ou reclassificar chamados.
           </p>
         </div>
         <Button type="button" size="sm" className="shrink-0 gap-1.5" onClick={() => setCreateOpen(true)}>
@@ -154,7 +155,7 @@ export function CategoriasSettings() {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="font-medium text-muted-foreground">Nome</TableHead>
-              <TableHead className="font-medium text-muted-foreground">Responsável padrão</TableHead>
+              <TableHead className="font-medium text-muted-foreground">Responsáveis</TableHead>
               <TableHead className="font-medium text-muted-foreground w-24">Ativa</TableHead>
               <TableHead className="w-10" />
             </TableRow>
@@ -171,7 +172,13 @@ export function CategoriasSettings() {
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {c.responsavelNome ?? "—"}
+                    {c.responsaveis && c.responsaveis.length > 0
+                      ? c.responsaveis
+                          .map((r) => r.name ?? r.email)
+                          .filter(Boolean)
+                          .slice(0, 3)
+                          .join(", ") + (c.responsaveis.length > 3 ? ` +${c.responsaveis.length - 3}` : "")
+                      : "—"}
                   </TableCell>
                   <TableCell>
                     {c.ativo ? (
@@ -212,12 +219,12 @@ export function CategoriasSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Responsável padrão</Label>
-              <UsuarioBuscaCombobox
+                <Label>Responsáveis</Label>
+                <UsuariosMultiCombobox
                 usuarios={usuarios}
-                value={novoResp}
-                onValueChange={setNovoResp}
-                placeholder="Buscar técnico…"
+                  values={novoRespIds}
+                  onValuesChange={setNovoRespIds}
+                  placeholder="Selecionar técnicos…"
                 searchPlaceholder="Nome ou e-mail…"
               />
             </div>
@@ -245,12 +252,12 @@ export function CategoriasSettings() {
                 <Input id="cat-edit-nome" value={editNome} onChange={(e) => setEditNome(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Responsável padrão</Label>
-                <UsuarioBuscaCombobox
+                <Label>Responsáveis</Label>
+                <UsuariosMultiCombobox
                   usuarios={usuarios}
-                  value={editResp}
-                  onValueChange={setEditResp}
-                  placeholder="Buscar técnico…"
+                  values={editRespIds}
+                  onValuesChange={setEditRespIds}
+                  placeholder="Selecionar técnicos…"
                   searchPlaceholder="Nome ou e-mail…"
                 />
               </div>

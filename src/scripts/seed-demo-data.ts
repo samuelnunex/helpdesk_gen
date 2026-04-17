@@ -209,6 +209,11 @@ async function main(): Promise<void> {
       categoriaIds.push(await ensureCategoria(db, nome));
     }
 
+    // Garante pelo menos um responsável por categoria (para o fluxo de abertura/reclassificação).
+    // No demo, usamos o atendente como responsável de todas as categorias.
+    await db.execute(sql`DELETE FROM usuario_categorias`);
+    await db.insert(schema.usuarioCategorias).values(categoriaIds.map((categoriaId) => ({ usuarioId: atendenteId, categoriaId })));
+
     const now = new Date();
     const rows: (typeof schema.chamados.$inferInsert)[] = [];
 

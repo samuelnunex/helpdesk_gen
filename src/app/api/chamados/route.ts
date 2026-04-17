@@ -13,6 +13,7 @@ import {
   chamadoLeituraComentarios,
   chamados,
   setores,
+  usuarioCategorias,
   users,
 } from "@/lib/db/schema";
 import { criarNotificacoes } from "@/lib/notificacoes";
@@ -224,9 +225,17 @@ export async function POST(request: Request) {
     if (!cat || !cat.ativo) {
       return NextResponse.json({ error: "Categoria não encontrada ou inativa." }, { status: 404 });
     }
-    if (!cat.responsavelPadraoId) {
+
+    const responsaveisRows = await db
+      .select({ usuarioId: usuarioCategorias.usuarioId })
+      .from(usuarioCategorias)
+      .where(eq(usuarioCategorias.categoriaId, cat.id));
+    const responsaveisIds = responsaveisRows.map((r) => r.usuarioId);
+
+    const responsavelInicial = cat.responsavelPadraoId ?? responsaveisIds[0] ?? null;
+    if (!responsavelInicial) {
       return NextResponse.json(
-        { error: "A categoria não possui técnico responsável padrão. Configure em Configurações → Categorias." },
+        { error: "A categoria não possui técnicos responsáveis. Configure em Configurações → Categorias." },
         { status: 400 },
       );
     }
@@ -240,7 +249,7 @@ export async function POST(request: Request) {
         setorId: parsed.data.setorId,
         categoriaId: parsed.data.categoriaId,
         criadorId: user.id,
-        atribuidoA: cat.responsavelPadraoId,
+        atribuidoA: responsavelInicial,
       })
       .returning();
 

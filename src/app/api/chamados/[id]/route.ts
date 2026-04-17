@@ -15,6 +15,7 @@ import {
   chamadoComentarios,
   chamados,
   setores,
+  usuarioCategorias,
   users,
 } from "@/lib/db/schema";
 import { criarNotificacoes } from "@/lib/notificacoes";
@@ -140,10 +141,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Categoria não encontrada ou inativa." }, { status: 404 });
     }
     if (parsed.data.atribuidoA === undefined && !cat.responsavelPadraoId) {
-      return NextResponse.json(
-        { error: "A categoria não possui responsável padrão. Configure antes de usar." },
-        { status: 400 },
-      );
+      const responsaveisRows = await db
+        .select({ usuarioId: usuarioCategorias.usuarioId })
+        .from(usuarioCategorias)
+        .where(eq(usuarioCategorias.categoriaId, cat.id));
+      if (responsaveisRows.length === 0) {
+        return NextResponse.json(
+          { error: "A categoria não possui técnicos responsáveis. Configure antes de usar." },
+          { status: 400 },
+        );
+      }
     }
   }
 
@@ -166,6 +173,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         .limit(1);
       if (cat?.responsavelPadraoId) {
         updates.atribuidoA = cat.responsavelPadraoId;
+      } else {
+        const responsaveisRows = await db
+          .select({ usuarioId: usuarioCategorias.usuarioId })
+          .from(usuarioCategorias)
+          .where(eq(usuarioCategorias.categoriaId, parsed.data.categoriaId));
+        if (responsaveisRows.length > 0) {
+          updates.atribuidoA = responsaveisRows[0].usuarioId;
+        }
       }
     }
   }

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { db } from "@/lib/db";
-import { categorias, users } from "@/lib/db/schema";
+import { categorias, usuarioCategorias, users } from "@/lib/db/schema";
 
 async function requireAdmin() {
   const auth = await requireUser();
@@ -23,7 +23,7 @@ async function requireAdmin() {
 
 const PostSchema = z.object({
   nome: z.string().min(1).max(120).trim(),
-  responsavelPadraoId: z.string().uuid(),
+  responsaveisIds: z.array(z.string().uuid()).min(1, "Selecione ao menos um responsável."),
 });
 
 export async function GET() {
@@ -37,13 +37,43 @@ export async function GET() {
         nome: categorias.nome,
         ativo: categorias.ativo,
         responsavelPadraoId: categorias.responsavelPadraoId,
-        responsavelNome: users.name,
       })
       .from(categorias)
-      .leftJoin(users, eq(categorias.responsavelPadraoId, users.id))
       .orderBy(asc(categorias.nome));
 
-    return NextResponse.json({ categorias: lista });
+    const categoriaIds = lista.map((c) => c.id);
+    const respRows =
+      categoriaIds.length === 0
+        ? []
+        : await db
+            .select({
+              categoriaId: usuarioCategorias.categoriaId,
+              id: users.id,
+              name: users.name,
+              email: users.email,
+            })
+            .from(usuarioCategorias)
+            .innerJoin(users, eq(usuarioCategorias.usuarioId, users.id))
+            .where(inArray(usuarioCategorias.categoriaId, categoriaIds))
+            .orderBy(asc(users.name));
+
+    const responsaveisPorCategoria = new Map<string, { id: string; name: string | null; email: string }[]>();
+    for (const r of respRows) {
+      const arr = responsaveisPorCategoria.get(r.categoriaId) ?? [];
+      arr.push({ id: r.id, name: r.name, email: r.email });
+      responsaveisPorCategoria.set(r.categoriaId, arr);
+    }
+
+    return NextResponse.json({
+      categorias: lista.map((c) => {
+        const responsaveis = responsaveisPorCategoria.get(c.id) ?? [];
+        return {
+          ...c,
+          responsaveis,
+          responsaveisIds: responsaveis.map((r) => r.id),
+        };
+      }),
+    });
   } catch (err) {
     console.error("Admin categorias GET error:", err);
     return NextResponse.json({ error: "Erro ao listar categorias." }, { status: 500 });
@@ -61,23 +91,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Dados inválidos.", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const [resp] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, parsed.data.responsavelPadraoId))
-      .limit(1);
-    if (!resp) {
-      return NextResponse.json({ error: "Responsável não encontrado." }, { status: 404 });
+    const responsaveisIds = [...new Set(parsed.data.responsaveisIds)];
+    const respRows =
+      responsaveisIds.length === 0
+        ? []
+        : await db.select({ id: users.id }).from(users).where(inArray(users.id, responsaveisIds));
+    if (respRows.length !== responsaveisIds.length) {
+      return NextResponse.json({ error: "Um ou mais responsáveis são inválidos." }, { status: 400 });
     }
+    const responsavelPadraoId = responsaveisIds[0];
 
     const [created] = await db
       .insert(categorias)
       .values({
         nome: parsed.data.nome,
-        responsavelPadraoId: parsed.data.responsavelPadraoId,
+        responsavelPadraoId,
         ativo: true,
       })
       .returning();
+
+    await db
+      .insert(usuarioCategorias)
+      .values(responsaveisIds.map((usuarioId) => ({ usuarioId, categoriaId: created.id })));
 
     return NextResponse.json({ categoria: created }, { status: 201 });
   } catch (err: unknown) {

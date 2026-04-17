@@ -50,7 +50,7 @@ type Chamado = {
 };
 
 type UsuarioResumo = { id: string; name: string | null; email?: string };
-type CategoriaLista = { id: string; nome: string; responsavelPadraoId: string | null };
+type CategoriaLista = { id: string; nome: string; responsavelPadraoId: string | null; responsaveisIds?: string[] };
 
 export function DetalhesChamado({
   chamadoId,
@@ -193,7 +193,7 @@ export function DetalhesChamado({
       toast.error(data.error ?? "Erro ao alterar categoria.");
       return;
     }
-    toast.success("Categoria atualizada. O responsável padrão da nova categoria foi aplicado quando aplicável.");
+    toast.success("Categoria atualizada. Um responsável da nova categoria foi aplicado quando aplicável.");
     fetchChamado();
   }
 
@@ -273,7 +273,9 @@ export function DetalhesChamado({
   if (!chamado) return <p className="text-muted-foreground">Chamado não encontrado ou sem permissão.</p>;
 
   const podeGerenciarAcompanhadores = podeAtribuir || chamado.criador?.id === userId;
-  const categoriasComResponsavel = categorias.filter((c) => c.responsavelPadraoId);
+  const categoriasComResponsavel = categorias.filter(
+    (c) => (c.responsaveisIds?.length ?? 0) > 0 || !!c.responsavelPadraoId,
+  );
   const idsAcompAtuais = new Set(chamado.acompanhadores.map((a) => a.id));
   const opcoesAdicionarAcompanhante = usuariosAcompanhamento.filter(
     (u) => !idsAcompAtuais.has(u.id) && u.id !== chamado.criador?.id,

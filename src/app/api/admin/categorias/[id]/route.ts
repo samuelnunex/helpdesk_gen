@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { db } from "@/lib/db";
-import { categorias, users } from "@/lib/db/schema";
+import { categorias, usuarioCategorias, users } from "@/lib/db/schema";
 
 async function requireAdmin() {
   const auth = await requireUser();
@@ -23,7 +23,7 @@ async function requireAdmin() {
 
 const PatchSchema = z.object({
   nome: z.string().min(1).max(120).trim().optional(),
-  responsavelPadraoId: z.string().uuid().optional(),
+  responsaveisIds: z.array(z.string().uuid()).min(1).optional(),
   ativo: z.boolean().optional(),
 });
 
@@ -44,19 +44,28 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Dados inválidos.", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    if (parsed.data.responsavelPadraoId !== undefined) {
-      const [resp] = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.id, parsed.data.responsavelPadraoId))
-        .limit(1);
-      if (!resp) return NextResponse.json({ error: "Responsável não encontrado." }, { status: 404 });
+    if (parsed.data.responsaveisIds !== undefined) {
+      const responsaveisIds = [...new Set(parsed.data.responsaveisIds)];
+      const rows =
+        responsaveisIds.length === 0
+          ? []
+          : await db.select({ id: users.id }).from(users).where(inArray(users.id, responsaveisIds));
+      if (rows.length !== responsaveisIds.length) {
+        return NextResponse.json({ error: "Um ou mais responsáveis são inválidos." }, { status: 400 });
+      }
     }
 
     const updates: Partial<typeof categorias.$inferInsert> = { atualizadoEm: new Date() };
     if (parsed.data.nome !== undefined) updates.nome = parsed.data.nome;
-    if (parsed.data.responsavelPadraoId !== undefined) updates.responsavelPadraoId = parsed.data.responsavelPadraoId;
     if (parsed.data.ativo !== undefined) updates.ativo = parsed.data.ativo;
+    if (parsed.data.responsaveisIds !== undefined) {
+      const responsaveisIds = [...new Set(parsed.data.responsaveisIds)];
+      updates.responsavelPadraoId = responsaveisIds[0];
+      await db.delete(usuarioCategorias).where(eq(usuarioCategorias.categoriaId, id));
+      await db
+        .insert(usuarioCategorias)
+        .values(responsaveisIds.map((usuarioId) => ({ usuarioId, categoriaId: id })));
+    }
 
     await db.update(categorias).set(updates).where(eq(categorias.id, id));
     return NextResponse.json({ message: "Categoria atualizada." });

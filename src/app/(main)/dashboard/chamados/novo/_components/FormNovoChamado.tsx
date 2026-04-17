@@ -32,7 +32,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 type Setor = { id: string; nome: string };
 type UsuarioOpcao = { id: string; name: string | null; email: string };
-type CategoriaOpcao = { id: string; nome: string; responsavelPadraoId: string | null };
+type CategoriaOpcao = { id: string; nome: string; responsavelPadraoId: string | null; responsaveisIds?: string[] };
 
 export function FormNovoChamado({ userId }: { userId: string }) {
   const router = useRouter();
@@ -67,7 +67,9 @@ export function FormNovoChamado({ userId }: { userId: string }) {
     defaultValues: { titulo: "", descricao: "", prioridade: "media", setorId: "", categoriaId: "" },
   });
 
-  const categoriasComResponsavel = categorias.filter((c) => c.responsavelPadraoId);
+  const categoriasComResponsavel = categorias.filter(
+    (c) => (c.responsaveisIds?.length ?? 0) > 0 || !!c.responsavelPadraoId,
+  );
 
   const usuariosAcompanhamentoLista = useMemo(
     () => usuarios.filter((u) => u.id !== userId),
@@ -177,7 +179,7 @@ export function FormNovoChamado({ userId }: { userId: string }) {
                     </SelectContent>
                   </Select>
                   <p className="text-muted-foreground text-xs">
-                    O responsável inicial será o técnico padrão desta categoria.
+                    O responsável inicial será escolhido dentre os técnicos responsáveis desta categoria.
                   </p>
                   {categoriasComResponsavel.length === 0 && (
                     <p className="text-amber-700 text-xs dark:text-amber-500">
