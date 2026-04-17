@@ -67,7 +67,7 @@ export function ProcessoChamadoShell({
         <header className="flex flex-wrap items-center gap-3 border-border border-b pb-4">
           {logoSrc ? (
             <>
-              {/* biome-ignore lint/performance/noImgElement: rasterização no PDF (html2canvas) com crossOrigin */}
+              {/* biome-ignore lint/performance/noImgElement: captura para PDF (modern-screenshot) */}
               <img
                 src={logoSrc}
                 alt=""
