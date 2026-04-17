@@ -18,6 +18,8 @@ import {
 } from "@/lib/db/schema";
 import { criarNotificacoes } from "@/lib/notificacoes";
 import { idsUsuariosTIAtivos } from "@/lib/notificacoes-chamado-destinatarios";
+import { calcularLimitesSla } from "@/lib/sla/calcular-prazos";
+import { buscarPoliticaSla } from "@/lib/sla/politica-db";
 
 const CreateChamadoSchema = z.object({
   titulo: z.string().min(1).max(300),
@@ -84,6 +86,12 @@ export async function GET(request: Request) {
         criadoEm: chamados.criadoEm,
         atualizadoEm: chamados.atualizadoEm,
         fechadoEm: chamados.fechadoEm,
+        slaMetaRespostaMinutos: chamados.slaMetaRespostaMinutos,
+        slaMetaResolucaoMinutos: chamados.slaMetaResolucaoMinutos,
+        slaRespostaLimiteEm: chamados.slaRespostaLimiteEm,
+        slaResolucaoLimiteEm: chamados.slaResolucaoLimiteEm,
+        slaPrimeiraRespostaEm: chamados.slaPrimeiraRespostaEm,
+        slaResolucaoEm: chamados.slaResolucaoEm,
       })
       .from(chamados)
       .leftJoin(setores, eq(chamados.setorId, setores.id))
@@ -240,6 +248,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const inicioSla = new Date();
+    const politicaSla = await buscarPoliticaSla(db, parsed.data.categoriaId, parsed.data.prioridade);
+    const camposSla =
+      politicaSla !== null
+        ? {
+            slaMetaRespostaMinutos: politicaSla.metaRespostaMinutos,
+            slaMetaResolucaoMinutos: politicaSla.metaResolucaoMinutos,
+            ...calcularLimitesSla(inicioSla, politicaSla),
+          }
+        : {};
+
     const [chamado] = await db
       .insert(chamados)
       .values({
@@ -250,6 +269,7 @@ export async function POST(request: Request) {
         categoriaId: parsed.data.categoriaId,
         criadorId: user.id,
         atribuidoA: responsavelInicial,
+        ...camposSla,
       })
       .returning();
 

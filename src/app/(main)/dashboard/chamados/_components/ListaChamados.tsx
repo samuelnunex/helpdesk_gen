@@ -21,6 +21,7 @@ import { useChamadosRealtimeStore } from "@/stores/chamados-realtime";
 import { useNotificacoesStore } from "@/stores/notificacoes";
 
 import { PrioridadeBadge } from "./PrioridadeBadge";
+import { SlaStatusBadge } from "./SlaStatusBadge";
 import { StatusBadge } from "./StatusBadge";
 
 type EnvolvidoLista = { id: string; name: string | null; email?: string; fotoPerfil: string | null };
@@ -41,6 +42,12 @@ type Chamado = {
   criadoEm: string;
   atualizadoEm: string;
   fechadoEm: string | null;
+  slaMetaRespostaMinutos: number | null;
+  slaMetaResolucaoMinutos: number | null;
+  slaRespostaLimiteEm: string | null;
+  slaResolucaoLimiteEm: string | null;
+  slaPrimeiraRespostaEm: string | null;
+  slaResolucaoEm: string | null;
   temComentarioNaoVisto?: boolean;
   envolvidos?: EnvolvidoLista[];
 };
@@ -348,6 +355,7 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
                 <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Setor</th>
                 <th className="px-3 py-2 text-left font-medium hidden md:table-cell">Categoria</th>
                 <th className="px-3 py-2 text-left font-medium">Prioridade</th>
+                <th className="px-3 py-2 text-left font-medium hidden sm:table-cell w-[100px]">SLA</th>
                 <th className="px-3 py-2 text-left font-medium">Status</th>
                 <th className="px-3 py-2 text-left font-medium hidden lg:table-cell">Criação / duração</th>
                 <th className="px-3 py-2 text-left font-medium hidden xl:table-cell">Técnico responsável</th>
@@ -421,6 +429,9 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
                     <td className="px-3 py-2">
                       <PrioridadeBadge prioridade={chamado.prioridade} />
                     </td>
+                    <td className="px-3 py-2 hidden sm:table-cell align-middle" onClick={(e) => e.stopPropagation()}>
+                      <SlaStatusBadge chamado={chamado} />
+                    </td>
                     <td
                       className="px-3 py-2"
                       onClick={podeAlterarStatus ? (e) => e.stopPropagation() : undefined}
@@ -458,9 +469,9 @@ export function ListaChamados({ tipoConta }: { tipoConta: string }) {
                         {isClosed(chamado) ? (
                           <span
                             className="text-muted-foreground text-xs leading-tight whitespace-nowrap"
-                            title="SLA — tempo até encerramento"
+                            title="Tempo entre abertura e encerramento (calendário)"
                           >
-                            <span className="mr-1">SLA:</span>
+                            <span className="mr-1">Duração:</span>
                             {formatDuracao(chamado)}
                           </span>
                         ) : (

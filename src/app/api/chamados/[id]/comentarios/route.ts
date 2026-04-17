@@ -26,6 +26,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       titulo: chamados.titulo,
       criadorId: chamados.criadorId,
       atribuidoA: chamados.atribuidoA,
+      slaPrimeiraRespostaEm: chamados.slaPrimeiraRespostaEm,
     })
     .from(chamados)
     .where(eq(chamados.id, chamadoId))
@@ -54,6 +55,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .insert(chamadoComentarios)
     .values({ chamadoId, autorId: user.id, conteudo })
     .returning();
+
+  if (!chamado.slaPrimeiraRespostaEm && user.id === chamado.atribuidoA) {
+    await db
+      .update(chamados)
+      .set({ slaPrimeiraRespostaEm: new Date(), atualizadoEm: new Date() })
+      .where(eq(chamados.id, chamadoId));
+  }
 
   const notifIds = await destinatariosNotificacaoChamado(chamadoId, {
     excluirUsuarioId: user.id,

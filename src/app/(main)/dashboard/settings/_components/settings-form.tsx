@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LayoutGrid, LogIn, PanelLeft, Tags, Users } from "lucide-react";
+import { LayoutGrid, LogIn, PanelLeft, Tags, Timer, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -21,6 +21,7 @@ import type { AppSettingsValues, ThemeDefaultValue } from "@/lib/settings/types"
 import { LOGO_SIZE_OPTIONS } from "@/lib/settings/logo-size";
 
 import { CategoriasSettings } from "./categorias-settings";
+import { SlaSettings } from "./sla-settings";
 import { ImageUploadField } from "./image-upload-field";
 import { UsersManagement } from "./users-management";
 
@@ -105,9 +106,8 @@ export function SettingsForm({ defaultValues }: { defaultValues: AppSettingsValu
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Tabs defaultValue="geral" className="w-full">
-          <TabsList className="mb-4 h-9 w-full justify-start gap-0 rounded-lg border bg-transparent p-0">
+      <Tabs defaultValue="geral" className="w-full">
+        <TabsList className="mb-4 h-9 w-full justify-start gap-0 rounded-lg border bg-transparent p-0">
             <TabsTrigger value="geral" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
               <LayoutGrid className="size-4" />
               Geral
@@ -124,12 +124,17 @@ export function SettingsForm({ defaultValues }: { defaultValues: AppSettingsValu
               <Tags className="size-4" />
               Categorias
             </TabsTrigger>
+            <TabsTrigger value="sla" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
+              <Timer className="size-4" />
+              SLA
+            </TabsTrigger>
             <TabsTrigger value="usuarios" className="gap-2 rounded-md px-4 data-[state=active]:bg-muted">
               <Users className="size-4" />
               Usuários
             </TabsTrigger>
-          </TabsList>
+        </TabsList>
 
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <TabsContent value="geral" className="mt-0 space-y-4">
             <FormField
               control={form.control}
@@ -341,20 +346,24 @@ export function SettingsForm({ defaultValues }: { defaultValues: AppSettingsValu
               </div>
             </div>
           </TabsContent>
-          <TabsContent value="categorias" className="mt-0">
-            <CategoriasSettings />
-          </TabsContent>
-          <TabsContent value="usuarios" className="mt-0">
-            <UsersManagement />
-          </TabsContent>
-        </Tabs>
 
-        <div className="mt-6 border-t pt-4">
-          <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Salvando…" : "Salvar"}
-          </Button>
-        </div>
-      </form>
+          <div className="mt-6 border-t pt-4">
+            <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Salvando…" : "Salvar"}
+            </Button>
+          </div>
+        </form>
+
+        <TabsContent value="categorias" className="mt-0">
+          <CategoriasSettings />
+        </TabsContent>
+        <TabsContent value="sla" className="mt-0">
+          <SlaSettings />
+        </TabsContent>
+        <TabsContent value="usuarios" className="mt-0">
+          <UsersManagement />
+        </TabsContent>
+      </Tabs>
     </Form>
   );
 }

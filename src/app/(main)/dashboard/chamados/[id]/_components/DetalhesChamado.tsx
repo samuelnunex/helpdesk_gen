@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { format, formatDistance, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Clock, Paperclip, Pencil, Send, Trash2, User, X } from "lucide-react";
+import { Clock, Paperclip, Pencil, Send, Timer, Trash2, User, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,9 +18,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ComentarioTiptapEditor } from "@/components/comentario-editor/comentario-tiptap-editor";
 import { UsuarioBuscaCombobox } from "@/components/usuario-busca-combobox";
 import { plainTextLengthComentario, sanitizeComentarioHtml } from "@/lib/html/sanitize-comentario-html";
+import { SLA_TIMEZONE, minutosUteisEntre } from "@/lib/sla/horario-comercial";
+import { slaResumoVisual } from "@/lib/sla/status-ui";
 import { useChamadosRealtimeStore } from "@/stores/chamados-realtime";
 
 import { PrioridadeBadge } from "../../_components/PrioridadeBadge";
+import { SlaStatusBadge } from "../../_components/SlaStatusBadge";
 import { StatusBadge } from "../../_components/StatusBadge";
 
 type Chamado = {
@@ -47,6 +50,12 @@ type Chamado = {
     autorFoto: string | null;
   }[];
   anexos: { id: string; nomeArquivo: string; url: string; tipo: string }[];
+  slaMetaRespostaMinutos: number | null;
+  slaMetaResolucaoMinutos: number | null;
+  slaRespostaLimiteEm: string | null;
+  slaResolucaoLimiteEm: string | null;
+  slaPrimeiraRespostaEm: string | null;
+  slaResolucaoEm: string | null;
 };
 
 type UsuarioResumo = { id: string; name: string | null; email?: string };
@@ -434,6 +443,105 @@ export function DetalhesChamado({
       {/* Sidebar */}
       <div className="flex flex-col gap-4">
         <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Timer className="h-4 w-4 text-muted-foreground" />
+              SLA
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-xs">Situação:</span>
+              <SlaStatusBadge chamado={chamado} />
+            </div>
+            {chamado.slaResolucaoLimiteEm ? (
+              <>
+                <dl className="grid gap-2 text-xs">
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">Meta 1ª resposta</dt>
+                    <dd className="font-medium tabular-nums">
+                      {chamado.slaMetaRespostaMinutos != null ? `${chamado.slaMetaRespostaMinutos} min úteis` : "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">Limite 1ª resposta</dt>
+                    <dd className="text-right font-medium">
+                      {chamado.slaRespostaLimiteEm
+                        ? format(new Date(chamado.slaRespostaLimiteEm), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                        : "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">Meta resolução</dt>
+                    <dd className="font-medium tabular-nums">
+                      {chamado.slaMetaResolucaoMinutos != null ? `${chamado.slaMetaResolucaoMinutos} min úteis` : "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">Limite resolução</dt>
+                    <dd className="text-right font-medium">
+                      {format(new Date(chamado.slaResolucaoLimiteEm), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">1ª resposta registrada</dt>
+                    <dd className="text-right font-medium">
+                      {chamado.slaPrimeiraRespostaEm
+                        ? format(new Date(chamado.slaPrimeiraRespostaEm), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                        : "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-muted-foreground">Resolução (fechamento)</dt>
+                    <dd className="text-right font-medium">
+                      {chamado.slaResolucaoEm
+                        ? format(new Date(chamado.slaResolucaoEm), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                        : "—"}
+                    </dd>
+                  </div>
+                </dl>
+                {chamado.status !== "fechado" && chamado.status !== "cancelado"
+                  ? (() => {
+                      const now = new Date();
+                      const partes: string[] = [];
+                      if (chamado.slaRespostaLimiteEm && !chamado.slaPrimeiraRespostaEm) {
+                        const lim = new Date(chamado.slaRespostaLimiteEm);
+                        if (now < lim) {
+                          partes.push(`Resposta: faltam ~${minutosUteisEntre(now, lim)} min úteis.`);
+                        }
+                      }
+                      if (chamado.slaResolucaoLimiteEm) {
+                        const lim = new Date(chamado.slaResolucaoLimiteEm);
+                        if (now < lim) {
+                          partes.push(`Resolução: faltam ~${minutosUteisEntre(now, lim)} min úteis.`);
+                        }
+                      }
+                      if (partes.length === 0) return null;
+                      return (
+                        <p className="text-muted-foreground text-[11px] leading-snug">{partes.join(" ")}</p>
+                      );
+                    })()
+                  : null}
+              </>
+            ) : (
+              <p className="text-muted-foreground text-sm leading-snug">
+                Sem SLA configurado para a combinação de categoria e prioridade deste chamado (não havia política no
+                momento da abertura ou após recálculo).
+              </p>
+            )}
+            <p className="text-muted-foreground border-t pt-2 text-[11px] leading-snug">
+              Contagem em <span className="font-mono">{SLA_TIMEZONE}</span>, dias úteis (seg–sex), janelas{" "}
+              <strong>07:30–12:00</strong> e <strong>14:00–18:18</strong>, pausa 12:00–14:00.{" "}
+              {chamado.status === "cancelado"
+                ? "Cancelados não contabilizam cumprimento de resolução."
+                : chamado.slaResolucaoLimiteEm
+                  ? slaResumoVisual(chamado).title
+                  : null}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Detalhes</CardTitle>
           </CardHeader>
@@ -470,7 +578,7 @@ export function DetalhesChamado({
                 <div className="flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <div>
-                    <span className="text-muted-foreground">SLA: </span>
+                    <span className="text-muted-foreground">Duração: </span>
                     <span className="font-medium">
                       {formatDistance(new Date(chamado.criadoEm), new Date(chamado.fechadoEm), {
                         locale: ptBR,

@@ -20,6 +20,9 @@ import {
 } from "@/lib/db/schema";
 import { criarNotificacoes } from "@/lib/notificacoes";
 import { destinatariosNotificacaoChamado } from "@/lib/notificacoes-chamado-destinatarios";
+import { calcularLimitesSla } from "@/lib/sla/calcular-prazos";
+import { adicionarMinutosUteis } from "@/lib/sla/horario-comercial";
+import { buscarPoliticaSla, type PrioridadeChamado } from "@/lib/sla/politica-db";
 
 const PatchChamadoSchema = z.object({
   status: z.enum(["aberto", "em_progresso", "fechado", "cancelado"]).optional(),
@@ -186,6 +189,49 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   if (parsed.data.titulo !== undefined) updates.titulo = parsed.data.titulo;
   if (parsed.data.descricao !== undefined) updates.descricao = parsed.data.descricao;
+
+  const newCategoriaId = parsed.data.categoriaId ?? chamado.categoriaId;
+  const newPrioridade = (parsed.data.prioridade ?? chamado.prioridade) as PrioridadeChamado;
+  const categoriaOuPrioridadeMudou =
+    (parsed.data.categoriaId !== undefined && parsed.data.categoriaId !== chamado.categoriaId) ||
+    (parsed.data.prioridade !== undefined && parsed.data.prioridade !== chamado.prioridade);
+
+  if (
+    categoriaOuPrioridadeMudou &&
+    chamado.status !== "fechado" &&
+    chamado.status !== "cancelado"
+  ) {
+    const politica = await buscarPoliticaSla(db, newCategoriaId, newPrioridade);
+    if (!politica) {
+      Object.assign(updates, {
+        slaMetaRespostaMinutos: null,
+        slaMetaResolucaoMinutos: null,
+        slaRespostaLimiteEm: null,
+        slaResolucaoLimiteEm: null,
+      });
+    } else if (!chamado.slaPrimeiraRespostaEm) {
+      const inicio = new Date();
+      const lim = calcularLimitesSla(inicio, politica);
+      Object.assign(updates, {
+        slaMetaRespostaMinutos: politica.metaRespostaMinutos,
+        slaMetaResolucaoMinutos: politica.metaResolucaoMinutos,
+        slaRespostaLimiteEm: lim.slaRespostaLimiteEm,
+        slaResolucaoLimiteEm: lim.slaResolucaoLimiteEm,
+      });
+    } else {
+      Object.assign(updates, {
+        slaMetaResolucaoMinutos: politica.metaResolucaoMinutos,
+        slaResolucaoLimiteEm: adicionarMinutosUteis(new Date(), politica.metaResolucaoMinutos),
+      });
+    }
+  }
+
+  if (parsed.data.status === "fechado") {
+    updates.slaResolucaoEm = new Date();
+  }
+  if (parsed.data.status === "cancelado") {
+    updates.slaResolucaoEm = null;
+  }
 
   const [updated] = await db.update(chamados).set(updates).where(eq(chamados.id, id)).returning();
 

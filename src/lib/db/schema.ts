@@ -94,6 +94,23 @@ export const usuarioCategorias = pgTable(
   (t) => [primaryKey({ columns: [t.usuarioId, t.categoriaId] })],
 );
 
+/** Metas de SLA por categoria e prioridade (minutos úteis no horário comercial). */
+export const slaPoliticas = pgTable(
+  "sla_politicas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    categoriaId: uuid("categoria_id")
+      .notNull()
+      .references(() => categorias.id, { onDelete: "cascade" }),
+    prioridade: prioridadeChamadoEnum("prioridade").notNull(),
+    metaRespostaMinutos: integer("meta_resposta_minutos").notNull(),
+    metaResolucaoMinutos: integer("meta_resolucao_minutos").notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow().notNull(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [unique().on(t.categoriaId, t.prioridade)],
+);
+
 export const chamados = pgTable("chamados", {
   id: uuid("id").primaryKey().defaultRandom(),
   numero: serial("numero").notNull(),
@@ -116,6 +133,14 @@ export const chamados = pgTable("chamados", {
   criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow().notNull(),
   atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).defaultNow().notNull(),
   fechadoEm: timestamp("fechado_em", { withTimezone: true }),
+  /** Snapshot da política SLA no momento relevante (nullable = sem política). */
+  slaMetaRespostaMinutos: integer("sla_meta_resposta_minutos"),
+  slaMetaResolucaoMinutos: integer("sla_meta_resolucao_minutos"),
+  slaRespostaLimiteEm: timestamp("sla_resposta_limite_em", { withTimezone: true }),
+  slaResolucaoLimiteEm: timestamp("sla_resolucao_limite_em", { withTimezone: true }),
+  slaPrimeiraRespostaEm: timestamp("sla_primeira_resposta_em", { withTimezone: true }),
+  /** Preenchido ao fechar com status "fechado" (cancelado não conta como cumprimento). */
+  slaResolucaoEm: timestamp("sla_resolucao_em", { withTimezone: true }),
 });
 
 export const chamadoAcompanhadores = pgTable(
@@ -201,6 +226,8 @@ export type Setor = typeof setores.$inferSelect;
 export type NewSetor = typeof setores.$inferInsert;
 export type Categoria = typeof categorias.$inferSelect;
 export type NewCategoria = typeof categorias.$inferInsert;
+export type SlaPolitica = typeof slaPoliticas.$inferSelect;
+export type NewSlaPolitica = typeof slaPoliticas.$inferInsert;
 export type Chamado = typeof chamados.$inferSelect;
 export type NewChamado = typeof chamados.$inferInsert;
 export type ChamadoComentario = typeof chamadoComentarios.$inferSelect;

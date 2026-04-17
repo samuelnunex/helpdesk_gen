@@ -5,7 +5,9 @@
  * Uso: `npm run db:seed:demo` (requer DATABASE_URL no .env ou no ambiente).
  */
 
-import { subDays, subHours } from "date-fns";
+import { addHours, subDays, subHours } from "date-fns";
+
+import { calcularLimitesSla } from "../lib/sla/calcular-prazos";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
@@ -44,6 +46,17 @@ type PrioridadeChamado = "baixa" | "media" | "alta" | "urgente";
 
 const STATUS_CYCLE: StatusChamado[] = ["aberto", "em_progresso", "fechado", "cancelado"];
 const PRIORIDADE_CYCLE: PrioridadeChamado[] = ["baixa", "media", "alta", "urgente"];
+
+/** Metas demo (minutos úteis) por prioridade — aplicadas a todas as categorias do seed. */
+const METAS_SLA_POR_PRIORIDADE: Record<
+  PrioridadeChamado,
+  { metaRespostaMinutos: number; metaResolucaoMinutos: number }
+> = {
+  baixa: { metaRespostaMinutos: 480, metaResolucaoMinutos: 2880 },
+  media: { metaRespostaMinutos: 240, metaResolucaoMinutos: 1440 },
+  alta: { metaRespostaMinutos: 120, metaResolucaoMinutos: 720 },
+  urgente: { metaRespostaMinutos: 60, metaResolucaoMinutos: 360 },
+};
 
 const TITULOS_BASE: { titulo: string; trecho: string }[] = [
   { titulo: "Falha ao lançar pedido no SAP", trecho: "Mensagem BAPI return 99 ao gravar." },
@@ -211,6 +224,31 @@ async function main(): Promise<void> {
       categoriaIds.push(await ensureCategoria(db, nome));
     }
 
+    const agoraPoliticas = new Date();
+    for (const catId of categoriaIds) {
+      for (const pr of PRIORIDADE_CYCLE) {
+        const m = METAS_SLA_POR_PRIORIDADE[pr];
+        await db
+          .insert(schema.slaPoliticas)
+          .values({
+            categoriaId: catId,
+            prioridade: pr,
+            metaRespostaMinutos: m.metaRespostaMinutos,
+            metaResolucaoMinutos: m.metaResolucaoMinutos,
+            criadoEm: agoraPoliticas,
+            atualizadoEm: agoraPoliticas,
+          })
+          .onConflictDoUpdate({
+            target: [schema.slaPoliticas.categoriaId, schema.slaPoliticas.prioridade],
+            set: {
+              metaRespostaMinutos: m.metaRespostaMinutos,
+              metaResolucaoMinutos: m.metaResolucaoMinutos,
+              atualizadoEm: agoraPoliticas,
+            },
+          });
+      }
+    }
+
     // Garante pelo menos um responsável por categoria (para o fluxo de abertura/reclassificação).
     // No demo, usamos o atendente como responsável de todas as categorias.
     await db.execute(sql`DELETE FROM usuario_categorias`);
@@ -230,6 +268,12 @@ async function main(): Promise<void> {
       const criadorId = i % 3 === 0 ? atendenteId : solicitanteId;
       const atribuido = i % 2 === 0 ? atendenteId : solicitanteId;
 
+      const metaSla = METAS_SLA_POR_PRIORIDADE[prioridade];
+      const limitesSla = calcularLimitesSla(criadoEm, metaSla);
+      const primeiraRespostaDemo =
+        atribuido === atendenteId && status !== "aberto" ? addHours(criadoEm, 1 + (i % 6)) : null;
+      const slaResolucaoEm = status === "fechado" && fechadoEm ? fechadoEm : null;
+
       rows.push({
         titulo: `[Demo] ${base.titulo} #${i + 1}`,
         descricao: `${base.trecho}\n\nTicket fictício para ambiente de demonstração (seed). Categoria e setor variados para testes de lista e filtros.`,
@@ -242,6 +286,12 @@ async function main(): Promise<void> {
         criadoEm,
         atualizadoEm: fechadoEm ?? criadoEm,
         fechadoEm,
+        slaMetaRespostaMinutos: metaSla.metaRespostaMinutos,
+        slaMetaResolucaoMinutos: metaSla.metaResolucaoMinutos,
+        slaRespostaLimiteEm: limitesSla.slaRespostaLimiteEm,
+        slaResolucaoLimiteEm: limitesSla.slaResolucaoLimiteEm,
+        slaPrimeiraRespostaEm: primeiraRespostaDemo,
+        slaResolucaoEm,
       });
     }
 
@@ -250,6 +300,7 @@ async function main(): Promise<void> {
     console.log("Seed concluído:");
     console.log(`  Setores: ${SETORES.length} (garantidos por nome)`);
     console.log(`  Categorias: ${CATEGORIAS.length} (garantidas por nome)`);
+    console.log(`  Políticas SLA: ${categoriaIds.length * PRIORIDADE_CYCLE.length} (upsert por categoria × prioridade)`);
     console.log(`  Chamados demo: ${rows.length}`);
     console.log(`  Usuários demo: ${DEMO_USER_EMAILS.join(", ")} (senha: ${DEMO_PASSWORD})`);
   } finally {
