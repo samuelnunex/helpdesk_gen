@@ -19,6 +19,16 @@ function resolveLogoSrcForImg(logoUrl: string | null): string | null {
   return `${window.location.origin}/${logoUrl.replace(/^\//, "")}`;
 }
 
+/** Não usar crossOrigin em URLs da mesma origem: o servidor de estáticos costuma não mandar ACAO e a imagem falha ao carregar. */
+function logoNeedsCrossOrigin(absoluteSrc: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URL(absoluteSrc).origin !== window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export function ProcessoChamadoShell({
   children,
   chamadoId,
@@ -32,6 +42,10 @@ export function ProcessoChamadoShell({
 }) {
   const captureRef = useRef<HTMLDivElement>(null);
   const logoSrc = useMemo(() => resolveLogoSrcForImg(pdfBranding.logoUrl), [pdfBranding.logoUrl]);
+  const logoCrossOrigin = useMemo(
+    () => (logoSrc && logoNeedsCrossOrigin(logoSrc) ? ("anonymous" as const) : undefined),
+    [logoSrc],
+  );
 
   return (
     <div className="flex min-w-0 max-w-full flex-col gap-6">
@@ -58,7 +72,7 @@ export function ProcessoChamadoShell({
                 src={logoSrc}
                 alt=""
                 className="max-h-10 max-w-[160px] object-contain"
-                crossOrigin="anonymous"
+                crossOrigin={logoCrossOrigin}
                 width={160}
                 height={40}
               />
