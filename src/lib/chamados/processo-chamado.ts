@@ -2,6 +2,7 @@ import { format, formatDistance } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { asc, eq, inArray } from "drizzle-orm";
 
+import { labelTipoChamado } from "@/lib/chamados/tipo-chamado";
 import { db } from "@/lib/db";
 import {
   categorias,
@@ -12,7 +13,6 @@ import {
   setores,
   users,
 } from "@/lib/db/schema";
-import { labelTipoChamado } from "@/lib/chamados/tipo-chamado";
 import { slaResumoVisual } from "@/lib/sla/status-ui";
 
 function fmtDataHora(d: Date): string {
@@ -21,16 +21,6 @@ function fmtDataHora(d: Date): string {
 
 function fmtDuracao(de: Date, ate: Date): string {
   return formatDistance(de, ate, { locale: ptBR, addSuffix: false });
-}
-
-function excerptComentario(html: string, max = 140): string {
-  const texto = html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (texto.length <= max) return texto;
-  return `${texto.slice(0, max)}…`;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -96,11 +86,7 @@ export async function getProcessoChamadoPayload(chamadoId: string): Promise<Proc
     .from(users)
     .where(eq(users.id, row.criadorId))
     .limit(1);
-  const [atrib] = await db
-    .select({ name: users.name })
-    .from(users)
-    .where(eq(users.id, row.atribuidoA))
-    .limit(1);
+  const [atrib] = await db.select({ name: users.name }).from(users).where(eq(users.id, row.atribuidoA)).limit(1);
   const [setor] = await db.select({ nome: setores.nome }).from(setores).where(eq(setores.id, row.setorId)).limit(1);
   const [cat] = await db
     .select({ nome: categorias.nome })
@@ -198,7 +184,7 @@ export async function getProcessoChamadoPayload(chamadoId: string): Promise<Proc
       quandoIso: c.criadoEm.toISOString(),
       tipo: "comentario",
       titulo: c.autorId === row.criadorId ? "Comentário do requerente" : "Comentário da equipe",
-      detalhe: excerptComentario(c.conteudo),
+      detalhe: c.conteudo,
       usuarioNome: n,
     });
   }
@@ -237,20 +223,18 @@ export async function getProcessoChamadoPayload(chamadoId: string): Promise<Proc
   const primeiroAnexoData = anexos[0]?.criadoEm;
   const candidatosInteracao = [primeiroComentarioData, primeiroAnexoData].filter(Boolean) as Date[];
   const primeiraInteracaoData =
-    candidatosInteracao.length > 0
-      ? new Date(Math.min(...candidatosInteracao.map((d) => d.getTime())))
-      : null;
+    candidatosInteracao.length > 0 ? new Date(Math.min(...candidatosInteracao.map((d) => d.getTime()))) : null;
 
   const primeiroComentarioEquipe = comentarios.find((c) => c.autorId !== row.criadorId);
   const primeiraRespostaEquipeEm = primeiroComentarioEquipe?.criadoEm ?? null;
 
   const metricas: ProcessoChamadoMetricas = {
     atePrimeiraInteracao:
-      primeiraInteracaoData && primeiraInteracaoData > criado
-        ? fmtDuracao(criado, primeiraInteracaoData)
-        : null,
+      primeiraInteracaoData && primeiraInteracaoData > criado ? fmtDuracao(criado, primeiraInteracaoData) : null,
     atePrimeiraRespostaEquipe:
-      primeiraRespostaEquipeEm && primeiraRespostaEquipeEm > criado ? fmtDuracao(criado, primeiraRespostaEquipeEm) : null,
+      primeiraRespostaEquipeEm && primeiraRespostaEquipeEm > criado
+        ? fmtDuracao(criado, primeiraRespostaEquipeEm)
+        : null,
     atePrimeiraRespostaSla:
       row.slaPrimeiraRespostaEm && row.slaPrimeiraRespostaEm > criado
         ? fmtDuracao(criado, row.slaPrimeiraRespostaEm)

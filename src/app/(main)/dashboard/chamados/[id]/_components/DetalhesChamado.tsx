@@ -9,6 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { Clock, GitBranch, Paperclip, Pencil, Send, Timer, Trash2, User, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { ComentarioTiptapEditor } from "@/components/comentario-editor/comentario-tiptap-editor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,14 +18,14 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ComentarioTiptapEditor } from "@/components/comentario-editor/comentario-tiptap-editor";
 import { UsuarioBuscaCombobox } from "@/components/usuario-busca-combobox";
+import { labelTipoChamado, type TIPO_CHAMADO_PG } from "@/lib/chamados/tipo-chamado";
 import { plainTextLengthComentario, sanitizeComentarioHtml } from "@/lib/html/sanitize-comentario-html";
-import { labelTipoChamado, TIPO_CHAMADO_PG } from "@/lib/chamados/tipo-chamado";
-import { SLA_TIMEZONE, minutosUteisEntre } from "@/lib/sla/horario-comercial";
+import { minutosUteisEntre, SLA_TIMEZONE } from "@/lib/sla/horario-comercial";
 import { slaResumoVisual } from "@/lib/sla/status-ui";
 import { useChamadosRealtimeStore } from "@/stores/chamados-realtime";
 
+import { ComentarioHtmlBody } from "../../_components/ComentarioHtmlBody";
 import { PrioridadeBadge } from "../../_components/PrioridadeBadge";
 import { SlaStatusBadge } from "../../_components/SlaStatusBadge";
 import { StatusBadge } from "../../_components/StatusBadge";
@@ -401,11 +402,7 @@ export function DetalhesChamado({
                       {format(new Date(c.criadoEm), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                     </span>
                   </div>
-                  {/* HTML sanitizado no servidor; re-sanitizar na UI por defesa. */}
-                  <div
-                    className="comentario-html rounded-md bg-muted/50 p-3 text-sm [&_a]:text-primary [&_blockquote]:border-l [&_blockquote]:border-border [&_blockquote]:pl-3 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-1 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-2 [&_ul]:list-disc [&_ul]:pl-5"
-                    dangerouslySetInnerHTML={{ __html: sanitizeComentarioHtml(c.conteudo) }}
-                  />
+                  <ComentarioHtmlBody html={c.conteudo} />
                 </div>
               </div>
             ))}
@@ -549,9 +546,7 @@ export function DetalhesChamado({
                         }
                       }
                       if (partes.length === 0) return null;
-                      return (
-                        <p className="text-muted-foreground text-[11px] leading-snug">{partes.join(" ")}</p>
-                      );
+                      return <p className="text-muted-foreground text-[11px] leading-snug">{partes.join(" ")}</p>;
                     })()
                   : null}
               </>
@@ -608,7 +603,10 @@ export function DetalhesChamado({
             <div>
               <p className="mb-1 font-medium text-muted-foreground text-xs uppercase tracking-wider">Tipo</p>
               {podeAtribuir ? (
-                <Select value={chamado.tipoChamado} onValueChange={(v) => void alterarTipoChamado(v as (typeof TIPO_CHAMADO_PG)[number])}>
+                <Select
+                  value={chamado.tipoChamado}
+                  onValueChange={(v) => void alterarTipoChamado(v as (typeof TIPO_CHAMADO_PG)[number])}
+                >
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>

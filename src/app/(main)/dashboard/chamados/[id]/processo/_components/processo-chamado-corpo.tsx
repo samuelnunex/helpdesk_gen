@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { ProcessoChamadoPayload } from "@/lib/chamados/processo-chamado";
 import { labelTipoChamado } from "@/lib/chamados/tipo-chamado";
 
+import { ComentarioHtmlBody } from "../../../_components/ComentarioHtmlBody";
 import { StatusBadge } from "../../../_components/StatusBadge";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -118,7 +119,11 @@ export function ProcessoChamadoCorpo({ data }: { data: ProcessoChamadoPayload })
                   </div>
                   <p className="font-medium leading-snug">{ev.titulo}</p>
                   {ev.usuarioNome ? <p className="text-muted-foreground text-xs">Quem: {ev.usuarioNome}</p> : null}
-                  {ev.detalhe ? <p className="text-muted-foreground text-sm leading-snug">{ev.detalhe}</p> : null}
+                  {ev.detalhe && ev.tipo === "comentario" ? (
+                    <ComentarioHtmlBody html={ev.detalhe} className="text-muted-foreground" />
+                  ) : ev.detalhe ? (
+                    <p className="text-muted-foreground text-sm leading-snug">{ev.detalhe}</p>
+                  ) : null}
                 </div>
               </li>
             ))}
