@@ -18,7 +18,7 @@ export default async function NovoChamadoPage() {
           Preencha os detalhes para abrir um novo chamado.
         </p>
       </div>
-      <FormNovoChamado userId={user.id} />
+      <FormNovoChamado userId={user.id} defaultSetorId={user.setorId} />
     </div>
   );
 }

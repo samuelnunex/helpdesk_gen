@@ -113,6 +113,8 @@ type UserRow = {
   email: string;
   name: string | null;
   fotoPerfil: string | null;
+  setorId: string;
+  setorNome?: string | null;
   tipoConta: string;
   status: string;
   createdAt: string;
@@ -122,11 +124,13 @@ type UserRow = {
 };
 
 type CategoriaAdminRow = { id: string; nome: string; ativo: boolean };
+type SetorOption = { id: string; nome: string };
 
 const createUserSchema = z.object({
   email: z.string().email("E-mail inválido."),
   password: z.string().min(6, "Mínimo 6 caracteres."),
   name: z.string().max(200).optional(),
+  setorId: z.string().uuid("Selecione um setor."),
   tipoConta: z.enum(["admin", "usuario_final", "gestor_setor", "diretor", "ti", "desenvolvedor"]),
   status: z.enum(["ativo", "inativo", "verificado", "pendente"]),
 });
@@ -147,6 +151,7 @@ type ColumnKey = (typeof COLUMN_KEYS)[number];
 export function UsersManagement() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [categoriasAdmin, setCategoriasAdmin] = useState<CategoriaAdminRow[]>([]);
+  const [setores, setSetores] = useState<SetorOption[]>([]);
   const [editCategoriasIds, setEditCategoriasIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -192,10 +197,24 @@ export function UsersManagement() {
     }
   }, []);
 
+  const fetchSetores = useCallback(async () => {
+    try {
+      const res = await fetch("/api/setores");
+      const data = await res.json();
+      if (!res.ok) return;
+      const lista = (data.setores ?? []) as { id: string; nome: string }[];
+      lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      setSetores(lista.map((s) => ({ id: s.id, nome: s.nome })));
+    } catch {
+      setSetores([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchUsers();
     void fetchCategoriasAdmin();
-  }, [fetchUsers, fetchCategoriasAdmin]);
+    void fetchSetores();
+  }, [fetchUsers, fetchCategoriasAdmin, fetchSetores]);
 
   const createForm = useForm<CreateUserValues>({
     resolver: zodResolver(createUserSchema),
@@ -203,6 +222,7 @@ export function UsersManagement() {
       email: "",
       password: "",
       name: "",
+      setorId: "",
       tipoConta: "usuario_final",
       status: "ativo",
     },
@@ -215,7 +235,8 @@ export function UsersManagement() {
 
   const onAddOpen = (open: boolean) => {
     setAddOpen(open);
-    if (!open) createForm.reset({ email: "", password: "", name: "", tipoConta: "usuario_final", status: "ativo" });
+    if (!open)
+      createForm.reset({ email: "", password: "", name: "", setorId: "", tipoConta: "usuario_final", status: "ativo" });
   };
 
   const onCreateSubmit = async (data: CreateUserValues) => {
@@ -397,7 +418,7 @@ export function UsersManagement() {
     );
   }
 
-  const colSpan = 5 + (columns.lastLogin ? 1 : 0) + (columns.sessions ? 1 : 0) + 1; // checkbox + nome + tipo + email + status + lastLogin? + sessions? + actions
+  const colSpan = 6 + (columns.lastLogin ? 1 : 0) + (columns.sessions ? 1 : 0) + 1; // checkbox + nome + setor + tipo + email + status + lastLogin? + sessions? + actions
 
   return (
     <div className="space-y-4">
@@ -529,6 +550,7 @@ export function UsersManagement() {
                 />
               </TableHead>
               <TableHead className="font-medium text-muted-foreground">Nome</TableHead>
+              <TableHead className="font-medium text-muted-foreground">Setor</TableHead>
               <TableHead className="font-medium text-muted-foreground">Tipo</TableHead>
               <TableHead className="font-medium text-muted-foreground">E-mail</TableHead>
               <TableHead className="font-medium text-muted-foreground">Status</TableHead>
@@ -573,6 +595,7 @@ export function UsersManagement() {
                       <span className="font-medium">{user.name?.trim() || "—"}</span>
                     </div>
                   </TableCell>
+                  <TableCell className="p-2 text-muted-foreground">{user.setorNome ?? "—"}</TableCell>
                   <TableCell className="p-2 text-muted-foreground">{TIPO_LABEL[user.tipoConta] ?? user.tipoConta}</TableCell>
                   <TableCell className="p-2 text-muted-foreground">{user.email}</TableCell>
                   <TableCell className="p-2">
@@ -689,6 +712,30 @@ export function UsersManagement() {
                     <FormControl>
                       <Input placeholder="Nome completo" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="setorId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Setor</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o setor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {setores.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

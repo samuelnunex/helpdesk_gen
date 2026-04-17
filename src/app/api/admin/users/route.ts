@@ -4,7 +4,7 @@ import { desc, eq, gt } from "drizzle-orm";
 
 import { requireUser } from "@/lib/auth/require-user";
 import { db } from "@/lib/db";
-import { historicoLogin, sessoes, usuarioCategorias, users } from "@/lib/db/schema";
+import { historicoLogin, setores, sessoes, usuarioCategorias, users } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
 import { z } from "zod";
 
@@ -35,6 +35,7 @@ const CreateBodySchema = z.object({
   email: z.string().email("E-mail inválido."),
   password: z.string().min(6, "Senha com no mínimo 6 caracteres."),
   name: z.string().max(200).optional(),
+  setorId: z.string().uuid(),
   tipoConta: z.enum(tipoContaValues).optional(),
   status: z.enum(["ativo", "inativo", "verificado", "pendente"]).optional(),
 });
@@ -50,11 +51,14 @@ export async function GET() {
         email: users.email,
         name: users.name,
         fotoPerfil: users.fotoPerfil,
+        setorId: users.setorId,
+        setorNome: setores.nome,
         tipoConta: users.tipoConta,
         status: users.status,
         createdAt: users.createdAt,
       })
       .from(users)
+      .leftJoin(setores, eq(users.setorId, setores.id))
       .orderBy(desc(users.createdAt));
 
     const logins = await db
@@ -98,6 +102,8 @@ export async function GET() {
       email: u.email,
       name: u.name,
       fotoPerfil: u.fotoPerfil ?? null,
+      setorId: u.setorId,
+      setorNome: u.setorNome ?? null,
       tipoConta: u.tipoConta,
       status: u.status,
       createdAt: u.createdAt.toISOString(),
@@ -127,6 +133,7 @@ export async function POST(request: Request) {
       );
     }
     const { email, password, name, tipoConta, status } = parsed.data;
+    const { setorId } = parsed.data;
 
     const existing = await db.query.users.findFirst({
       where: (u, { eq }) => eq(u.email, email),
@@ -136,11 +143,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "E-mail já cadastrado." }, { status: 409 });
     }
 
+    const [setor] = await db.select({ id: setores.id }).from(setores).where(eq(setores.id, setorId)).limit(1);
+    if (!setor) {
+      return NextResponse.json({ error: "Setor inválido." }, { status: 400 });
+    }
+
     const passwordHash = await hashPassword(password);
     await db.insert(users).values({
       email,
       passwordHash,
       name: name ?? null,
+      setorId,
       tipoConta: tipoConta ?? "usuario_final",
       status: status ?? "ativo",
     });

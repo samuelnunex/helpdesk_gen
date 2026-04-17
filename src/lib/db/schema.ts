@@ -27,6 +27,7 @@ export const users = pgTable("usuarios", {
   username: text("username").unique(),
   bio: text("bio"),
   fotoPerfil: text("foto_perfil"),
+  setorId: uuid("setor_id").notNull(),
   tipoConta: tipoContaEnum("tipo_conta").default("usuario_final").notNull(),
   status: statusContaEnum("status_conta").default("ativo").notNull(),
   notifEmail: boolean("notif_email").default(true).notNull(),

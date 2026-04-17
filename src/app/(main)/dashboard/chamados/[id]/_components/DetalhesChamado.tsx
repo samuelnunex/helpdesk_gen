@@ -309,7 +309,10 @@ export function DetalhesChamado({
             </p>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-wrap text-sm">{chamado.descricao}</p>
+            <div
+              className="comentario-html rounded-md bg-muted/20 p-3 text-sm [&_a]:text-primary [&_blockquote]:border-l [&_blockquote]:border-border [&_blockquote]:pl-3 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-1 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-2 [&_ul]:list-disc [&_ul]:pl-5"
+              dangerouslySetInnerHTML={{ __html: sanitizeComentarioHtml(chamado.descricao) }}
+            />
 
             {chamado.anexos.length > 0 && (
               <div className="mt-4">

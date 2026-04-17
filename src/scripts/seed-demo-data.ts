@@ -118,6 +118,7 @@ async function ensureCategoria(db: ReturnType<typeof drizzle<typeof schema>>, no
 
 async function ensureDemoUsers(
   db: ReturnType<typeof drizzle<typeof schema>>,
+  setorId: string,
 ): Promise<{ solicitanteId: string; atendenteId: string }> {
   const hash = await hashPassword(DEMO_PASSWORD);
   const out: { solicitanteId: string; atendenteId: string } = {
@@ -139,6 +140,7 @@ async function ensureDemoUsers(
         email,
         passwordHash: hash,
         name: i === 0 ? "Maria Demo (solicitante)" : "Carlos Demo (atendente)",
+        setorId,
         tipoConta: i === 0 ? "usuario_final" : "ti",
         status: "ativo",
       })
@@ -196,13 +198,13 @@ async function main(): Promise<void> {
     );
     await db.execute(sql`DELETE FROM chamados WHERE titulo LIKE '[Demo]%'`);
 
-    const { solicitanteId, atendenteId } = await ensureDemoUsers(db);
-
-    const gestorId = atendenteId;
     const setorIds: string[] = [];
     for (const nome of SETORES) {
-      setorIds.push(await ensureSetor(db, nome, gestorId));
+      setorIds.push(await ensureSetor(db, nome, null));
     }
+
+    const setorPadraoId = setorIds[0];
+    const { solicitanteId, atendenteId } = await ensureDemoUsers(db, setorPadraoId);
 
     const categoriaIds: string[] = [];
     for (const nome of CATEGORIAS) {

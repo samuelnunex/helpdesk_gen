@@ -57,6 +57,13 @@
       "when": 1776373487428,
       "tag": "0007_categorias_chamados",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776434000000,
+      "tag": "0008_users_setor",
+      "breakpoints": true
     }
   ]
 }

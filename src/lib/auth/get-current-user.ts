@@ -14,6 +14,7 @@ export type CurrentUser = {
   username: string | null;
   bio: string | null;
   fotoPerfil: string | null;
+  setorId: string;
   tipoConta:
     | "admin"
     | "usuario_final"
@@ -55,6 +56,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       username: users.username,
       bio: users.bio,
       fotoPerfil: users.fotoPerfil,
+      setorId: users.setorId,
       tipoConta: users.tipoConta,
       status: users.status,
       notifEmail: users.notifEmail,

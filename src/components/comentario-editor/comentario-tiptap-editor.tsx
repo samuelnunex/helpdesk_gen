@@ -164,9 +164,6 @@ export function ComentarioTiptapEditor({
         </Btn>
       </div>
       <EditorContent editor={editor} className="rounded-b-md border border-input" />
-      <p className="text-muted-foreground text-xs">
-        Editor de texto rico gratuito (Tiptap, licença MIT). Formatação básica; o HTML é sanitizado ao guardar.
-      </p>
     </div>
   );
 }

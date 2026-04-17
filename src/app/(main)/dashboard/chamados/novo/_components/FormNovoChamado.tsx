@@ -18,11 +18,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { ComentarioTiptapEditor } from "@/components/comentario-editor/comentario-tiptap-editor";
+import { plainTextLengthComentario, sanitizeComentarioHtml } from "@/lib/html/sanitize-comentario-html";
 
 const formSchema = z.object({
   titulo: z.string().min(1, "Título obrigatório.").max(300),
-  descricao: z.string().min(1, "Descrição obrigatória."),
+  descricao: z
+    .string()
+    .min(1, "Descrição obrigatória.")
+    .refine((v) => plainTextLengthComentario(sanitizeComentarioHtml(v)) >= 1, "Descrição obrigatória."),
   prioridade: z.enum(["baixa", "media", "alta", "urgente"]),
   setorId: z.string().uuid("Selecione um setor."),
   categoriaId: z.string().uuid("Selecione uma categoria."),
@@ -34,7 +38,7 @@ type Setor = { id: string; nome: string };
 type UsuarioOpcao = { id: string; name: string | null; email: string };
 type CategoriaOpcao = { id: string; nome: string; responsavelPadraoId: string | null; responsaveisIds?: string[] };
 
-export function FormNovoChamado({ userId }: { userId: string }) {
+export function FormNovoChamado({ userId, defaultSetorId }: { userId: string; defaultSetorId: string }) {
   const router = useRouter();
   const [setores, setSetores] = useState<Setor[]>([]);
   const [categorias, setCategorias] = useState<CategoriaOpcao[]>([]);
@@ -64,8 +68,15 @@ export function FormNovoChamado({ userId }: { userId: string }) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { titulo: "", descricao: "", prioridade: "media", setorId: "", categoriaId: "" },
+    defaultValues: { titulo: "", descricao: "", prioridade: "media", setorId: defaultSetorId, categoriaId: "" },
   });
+
+  // Se o usuário mudar (ou vier vazio), garante o default no campo.
+  useEffect(() => {
+    if (!defaultSetorId) return;
+    const atual = form.getValues("setorId");
+    if (!atual) form.setValue("setorId", defaultSetorId, { shouldDirty: false, shouldTouch: false });
+  }, [defaultSetorId, form]);
 
   const categoriasComResponsavel = categorias.filter(
     (c) => (c.responsaveisIds?.length ?? 0) > 0 || !!c.responsavelPadraoId,
@@ -90,11 +101,13 @@ export function FormNovoChamado({ userId }: { userId: string }) {
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
     try {
+      const descricaoSanitizada = sanitizeComentarioHtml(values.descricao);
       const res = await fetch("/api/chamados", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
+          descricao: descricaoSanitizada,
           ...(acompanhadorIds.length > 0 ? { acompanhadores: acompanhadorIds } : {}),
         }),
       });
@@ -126,37 +139,89 @@ export function FormNovoChamado({ userId }: { userId: string }) {
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <FormField
-              control={form.control}
-              name="titulo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Título</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Descreva o problema em poucas palavras" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-[2fr_1fr] md:items-start">
+              <div className="space-y-5">
+                <FormField
+                  control={form.control}
+                  name="titulo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Título</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Descreva o problema em poucas palavras" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="descricao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Detalhe o problema, inclua passos para reproduzir se aplicável..."
-                      rows={5}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="descricao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descrição</FormLabel>
+                      <FormControl>
+                        <ComentarioTiptapEditor onChange={field.onChange} disabled={submitting} placeholder="" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-medium text-sm">Acompanhadores (opcional)</Label>
+                <p className="text-muted-foreground text-xs">Quem marcar receberá notificações sobre este chamado.</p>
+                <div className="overflow-hidden rounded-md border">
+                  <div className="border-b bg-muted/30 px-2 py-2">
+                    <div className="relative">
+                      <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                      <Input
+                        type="search"
+                        placeholder="Buscar por nome ou e-mail…"
+                        value={filtroAcompanhadores}
+                        onChange={(e) => setFiltroAcompanhadores(e.target.value)}
+                        className="h-8 pl-8 text-sm"
+                        autoComplete="off"
+                        aria-label="Filtrar lista de acompanhadores"
+                      />
+                    </div>
+                  </div>
+                  <ScrollArea className="h-40 p-3">
+                    <div className="space-y-3">
+                      {usuariosAcompanhamentoFiltrados.map((u) => (
+                        <div key={u.id} className="flex items-start gap-2">
+                          <Checkbox
+                            id={`acomp-${u.id}`}
+                            checked={acompanhadorIds.includes(u.id)}
+                            onCheckedChange={(checked) => {
+                              setAcompanhadorIds((prev) =>
+                                checked === true
+                                  ? prev.includes(u.id)
+                                    ? prev
+                                    : [...prev, u.id]
+                                  : prev.filter((id) => id !== u.id),
+                              );
+                            }}
+                          />
+                          <label htmlFor={`acomp-${u.id}`} className="cursor-pointer text-sm leading-tight">
+                            <span className="font-medium">{u.name ?? u.email}</span>
+                            {u.name ? <span className="block text-muted-foreground text-xs">{u.email}</span> : null}
+                          </label>
+                        </div>
+                      ))}
+                      {usuariosAcompanhamentoLista.length === 0 && (
+                        <p className="text-muted-foreground text-xs">Nenhum usuário disponível.</p>
+                      )}
+                      {usuariosAcompanhamentoLista.length > 0 && usuariosAcompanhamentoFiltrados.length === 0 && (
+                        <p className="text-muted-foreground text-xs">Nenhum usuário encontrado para esta busca.</p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            </div>
 
             <FormField
               control={form.control}
@@ -240,58 +305,6 @@ export function FormNovoChamado({ userId }: { userId: string }) {
                   </FormItem>
                 )}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-medium text-sm">Acompanhadores (opcional)</Label>
-              <p className="text-muted-foreground text-xs">Quem marcar receberá notificações sobre este chamado.</p>
-              <div className="overflow-hidden rounded-md border">
-                <div className="border-b bg-muted/30 px-2 py-2">
-                  <div className="relative">
-                    <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                    <Input
-                      type="search"
-                      placeholder="Buscar por nome ou e-mail…"
-                      value={filtroAcompanhadores}
-                      onChange={(e) => setFiltroAcompanhadores(e.target.value)}
-                      className="h-8 pl-8 text-sm"
-                      autoComplete="off"
-                      aria-label="Filtrar lista de acompanhadores"
-                    />
-                  </div>
-                </div>
-                <ScrollArea className="h-40 p-3">
-                  <div className="space-y-3">
-                    {usuariosAcompanhamentoFiltrados.map((u) => (
-                      <div key={u.id} className="flex items-start gap-2">
-                        <Checkbox
-                          id={`acomp-${u.id}`}
-                          checked={acompanhadorIds.includes(u.id)}
-                          onCheckedChange={(checked) => {
-                            setAcompanhadorIds((prev) =>
-                              checked === true
-                                ? prev.includes(u.id)
-                                  ? prev
-                                  : [...prev, u.id]
-                                : prev.filter((id) => id !== u.id),
-                            );
-                          }}
-                        />
-                        <label htmlFor={`acomp-${u.id}`} className="cursor-pointer text-sm leading-tight">
-                          <span className="font-medium">{u.name ?? u.email}</span>
-                          {u.name ? <span className="block text-muted-foreground text-xs">{u.email}</span> : null}
-                        </label>
-                      </div>
-                    ))}
-                    {usuariosAcompanhamentoLista.length === 0 && (
-                      <p className="text-muted-foreground text-xs">Nenhum usuário disponível.</p>
-                    )}
-                    {usuariosAcompanhamentoLista.length > 0 && usuariosAcompanhamentoFiltrados.length === 0 && (
-                      <p className="text-muted-foreground text-xs">Nenhum usuário encontrado para esta busca.</p>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
             </div>
 
             <div>
